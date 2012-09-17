@@ -10,6 +10,16 @@ inc by adding your own file
 
 = someday =
 
+allow "your brother to also sync your stuff" (hmm...just use the public part of it?
+  require "shared" dropbox folder, with your brother? yeah that sounds sane...
+    does google drive sharing allow them to sync to a local folder at that point? dropbox?
+
+able to use "just the remote API" to copy it to the temp folder, instead of having to have it installed locally [?]
+
+try it with icloud, too, why not?
+
+release an OS X client? :)
+
 pick a new name
   "fake real" website
   distributable
