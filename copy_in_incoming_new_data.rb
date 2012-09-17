@@ -1,7 +1,5 @@
 =begin
 
-0. notice incoming files
-0.5 sleep a bit to make sure there aren't more coming...
 1. create lock file, wait
 2. copy in "a chunk"
   split files for now
@@ -13,9 +11,10 @@
 
 class IncomingCopier
 
-  def initialize local_drop_here_to_save_dir, sleep_time
+  def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time
     @local_drop_here_to_save_dir = local_drop_here_to_save_dir
 	@sleep_time = sleep_time
+	@dropbox_root_local_dir = dropbox_root_local_dir
   end
   
   def sleep!
@@ -29,7 +28,7 @@ class IncomingCopier
   def wait_for_files_to_appear
     while files_incoming.length == 0
       sleep!
-	  print '.'
+	  print ','
     end
   end
 
@@ -38,13 +37,25 @@ class IncomingCopier
   end
   
   def wait_for_incoming_files_to_stabilize
-    old_size = 0
+    old_size = -1
 	current_size = size_incoming_files
     while(current_size != old_size) 
       old_size = current_size
       sleep!
+	  print '-'
 	  current_size = size_incoming_files
     end
+  end
+  
+  def create_lock_file
+    dir = "#{@dropbox_root_local_dir}/synchronization"
+    Dir.mkdir dir unless File.directory?(dir)
+    FileUtils.touch "#{@dropbox_root_local_dir}/synchronization/#{Process.pid}_lock"
+  end
+  
+  def go
+    wait_for_files_to_appear
+	wait_for_incoming_files_to_stabilize
   end
   
 end
