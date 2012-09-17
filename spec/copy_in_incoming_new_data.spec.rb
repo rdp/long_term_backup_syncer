@@ -11,6 +11,7 @@ describe IncomingCopier do
 	FileUtils.rm_rf 'dropbox_root_dir'
 	Dir.mkdir 'dropbox_root_dir'
     @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.2
+    @competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
   end
 
   it 'should wait for incoming data' do
@@ -45,24 +46,27 @@ describe IncomingCopier do
   end
   
   it 'should back off if already locked' do
-    competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
-	FileUtils.touch competitor
+	FileUtils.touch @competitor
 	start_time = Time.now
 	stop_time = nil
     t = Thread.new { @subject.wait_if_already_has_lock_files; stop_time = Time.now }
 	sleep 0.5
-	File.delete competitor
+	File.delete @competitor
 	t.join
 	(stop_time - start_time).should be > 0.5	
   end
   
   it 'should back off if lock file contention' do
-    competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
-	FileUtils.touch competitor
+	FileUtils.touch @competitor
 	@subject.sleep_time = 0
     assert !@subject.wait_for_lock_files_to_stabilize
-	File.delete competitor
+	File.delete @competitor
     assert @subject.wait_for_lock_files_to_stabilize
+  end
+  
+  it 'should retry when it detects contention' do
+    
+  
   end
 
 end
