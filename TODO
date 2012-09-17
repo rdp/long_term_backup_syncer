@@ -1,23 +1,16 @@
 hard code create file "this many clients total"
 hard code local dropbox repo. possibly in a YAML file...
 
-0. notice incoming files
-
-1. create lock file, wait
-2. copy in "a chunk"
-  split files for now
-2.5 create "1 client has it"
-3. remove lock file
-4. wait till "x" clients have each picked it up.
 
 client:
 
 notice files in there sans a lock file.
 copy them to local single backup dir.
-lock.
-inc
+inc by adding your own file
 
 = someday =
+
+can use gdrive + dropbox at the same time :)
 
 lossless hard core h264 on their way in [?]
   as an option :P
