@@ -18,6 +18,8 @@ class IncomingCopier
     Dir.mkdir lock_dir unless File.directory?(lock_dir)
   end
   
+  attr_accessor :sleep_time
+  
   def lock_dir
     "#{@dropbox_root_local_dir}/synchronization"
   end
@@ -66,13 +68,30 @@ class IncomingCopier
   def create_lock_file
     FileUtils.touch this_process_lock_file    
   end
+  
+  # returns true if "we got the lock"
+  def wait_for_lock_files_to_stabilize
+    100.times { sleep! } # TODO meter this ...
+	if Dir[lock_dir + '/*'].reject{|file| file == this_process_lock_file}.length > 0
+	  return false
+	else
+	  return true
+	end
+  end
+  
+  def obtain_lock
+	got_it = false
+	while !got_it
+	  wait_if_already_has_lock_files
+	  create_lock_file
+	  got_it = wait_for_lock_files_to_stabilize
+	end
+  end
  
   def go
     wait_for_files_to_appear
 	wait_for_incoming_files_to_stabilize
-	wait_if_already_has_lock_files
-	create_lock_file
-	wait_for_lock_files_to_stabilize
+	obtain_lock
   end
   
 end

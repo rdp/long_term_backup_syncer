@@ -55,5 +55,14 @@ describe IncomingCopier do
 	t.join
 	(stop_time - start_time).should be > 0.5	
   end
+  
+  it 'should back off if lock file contention' do
+    competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
+	FileUtils.touch competitor
+	@subject.sleep_time = 0
+    assert !@subject.wait_for_lock_files_to_stabilize
+	File.delete competitor
+    assert @subject.wait_for_lock_files_to_stabilize
+  end
 
 end
