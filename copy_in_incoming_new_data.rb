@@ -15,6 +15,11 @@ class IncomingCopier
     @local_drop_here_to_save_dir = local_drop_here_to_save_dir
 	@sleep_time = sleep_time
 	@dropbox_root_local_dir = dropbox_root_local_dir
+    Dir.mkdir lock_dir unless File.directory?(lock_dir)
+  end
+  
+  def lock_dir
+    "#{@dropbox_root_local_dir}/synchronization"
   end
   
   def sleep!
@@ -47,15 +52,27 @@ class IncomingCopier
     end
   end
   
-  def create_lock_file
-    dir = "#{@dropbox_root_local_dir}/synchronization"
-    Dir.mkdir dir unless File.directory?(dir)
-    FileUtils.touch "#{@dropbox_root_local_dir}/synchronization/#{Process.pid}_lock"
+  def this_process_lock_file
+    "#{@dropbox_root_local_dir}/synchronization/request_#{Process.pid}.lock"
   end
   
+  def wait_if_already_has_lock_files
+    raise 'locking confusion detected' if File.exist? this_process_lock_file
+    while Dir[lock_dir + '/*'].length > 0
+	  sleep!
+	end
+  end
+  
+  def create_lock_file
+    FileUtils.touch this_process_lock_file    
+  end
+ 
   def go
     wait_for_files_to_appear
 	wait_for_incoming_files_to_stabilize
+	wait_if_already_has_lock_files
+	create_lock_file
+	wait_for_lock_files_to_stabilize
   end
   
 end

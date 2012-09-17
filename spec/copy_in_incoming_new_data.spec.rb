@@ -6,12 +6,11 @@ require 'fileutils'
 
 describe IncomingCopier do
   before do
-    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.2
 	FileUtils.rm_rf 'test_dir'
 	Dir.mkdir 'test_dir'
 	FileUtils.rm_rf 'dropbox_root_dir'
 	Dir.mkdir 'dropbox_root_dir'
-	
+    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.2
   end
 
   it 'should wait for incoming data' do
@@ -42,7 +41,19 @@ describe IncomingCopier do
   
   it 'should create a lock file' do
     @subject.create_lock_file
-	assert File.exist? "dropbox_root_dir/synchronization/#{Process.pid}_lock"
+	assert File.exist? "dropbox_root_dir/synchronization/request_#{Process.pid}.lock"
+  end
+  
+  it 'should back off if already locked' do
+    competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
+	FileUtils.touch competitor
+	start_time = Time.now
+	stop_time = nil
+    t = Thread.new { @subject.wait_if_already_has_lock_files; stop_time = Time.now }
+	sleep 0.5
+	File.delete competitor
+	t.join
+	(stop_time - start_time).should be > 0.5	
   end
 
 end
