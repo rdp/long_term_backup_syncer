@@ -1,4 +1,3 @@
-require 'shared'
 =begin
 
 0. notice incoming files
@@ -12,18 +11,35 @@ require 'shared'
 5. delete it
 =end
 
-def files_incoming
-  Dir[@local_drop_here_to_save_dir + '/**/*']
-end
+class IncomingCopier
 
-incoming_length = 0
-while incoming_length == 0
-  incoming_length = files_incoming.length
-end
-old_incoming_length = -1
+  def initialize local_drop_here_to_save_dir
+    @local_drop_here_to_save_dir = local_drop_here_to_save_dir
+  end
+  
+  def files_incoming
+    Dir[@local_drop_here_to_save_dir + '/**/*']
+  end
 
-puts 'waiting to see when they\'re done'
-while(incoming_length != old_incoming_length) 
- sleep 10
- old_incoming_length = files_incoming.length
+  def wait_for_files_to_appear
+    while files_incoming.length == 0
+      sleep 2
+	  print '.'
+    end
+  end
+
+  def size_incoming_files
+    sum = 0; files_incoming.each{|f| sum += File.size f}; sum  
+  end
+  
+  def wait_for_incoming_files_to_stabilize
+    old_size = 0
+	current_size = size_incoming_files
+    while(current_size != old_size) 
+      old_size = current_size
+      sleep 2
+	  current_size = size_incoming_files
+    end
+  end
+  
 end
