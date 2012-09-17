@@ -13,8 +13,13 @@
 
 class IncomingCopier
 
-  def initialize local_drop_here_to_save_dir
+  def initialize local_drop_here_to_save_dir, sleep_time
     @local_drop_here_to_save_dir = local_drop_here_to_save_dir
+	@sleep_time = sleep_time
+  end
+  
+  def sleep!
+    sleep @sleep_time
   end
   
   def files_incoming
@@ -23,7 +28,7 @@ class IncomingCopier
 
   def wait_for_files_to_appear
     while files_incoming.length == 0
-      sleep 2
+      sleep!
 	  print '.'
     end
   end
@@ -37,7 +42,7 @@ class IncomingCopier
 	current_size = size_incoming_files
     while(current_size != old_size) 
       old_size = current_size
-      sleep 2
+      sleep!
 	  current_size = size_incoming_files
     end
   end
