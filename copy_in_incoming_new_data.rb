@@ -1,8 +1,6 @@
 =begin
 
-1. create lock file, wait
 2. copy in "a chunk"
-  split files for now
 2.5 create "1 client has it"
 3. remove lock file
 4. wait till "x" clients have each picked it up.
@@ -11,11 +9,12 @@
 
 class IncomingCopier
 
-  def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time, synchro_time
+  def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time, synchro_time, dropbox_size
     @local_drop_here_to_save_dir = local_drop_here_to_save_dir
 	@sleep_time = sleep_time
 	@dropbox_root_local_dir = dropbox_root_local_dir
 	@synchro_time = synchro_time
+	@dropbox_size = dropbox_size
     Dir.mkdir lock_dir unless File.directory?(lock_dir)
   end
   
@@ -91,6 +90,24 @@ class IncomingCopier
 	  create_lock_file
 	  got_it = wait_for_lock_files_to_stabilize
 	end
+  end
+  
+  def split_to_chunks
+    out = []
+	current_group = []
+	current_sum = 0	
+    files_incoming.sort.each{|f| 
+	  file_size = File.size f
+	  raise 'cannot fit that file ever [yet!]' if file_size > @dropbox_size
+	  if File.size(f) +  current_sum > @dropbox_size
+	    out << current_group
+		current_group = [f]
+		current_sum = 0
+	  else
+	     out << current_group
+	  end
+	}
+	out
   end
  
   def go

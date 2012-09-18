@@ -10,7 +10,7 @@ describe IncomingCopier do
 	Dir.mkdir 'test_dir'
 	FileUtils.rm_rf 'dropbox_root_dir'
 	Dir.mkdir 'dropbox_root_dir'
-    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.1, 0.5
+    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.1, 0.5, 1000
     @competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
   end
 
@@ -85,6 +85,15 @@ describe IncomingCopier do
 	end
 	t.join
 	(stop_time - start_time).should be > 0.75
+  end
+  
+  it 'should split incoming data to transferrable chunks' do
+    @subject.split_to_chunks.should == []
+    File.write 'test_dir/a', 'b'
+	@subject.split_to_chunks.should == [['test_dir/a']]
+	File.wrie 'test_dir/b', 'b'
+	@subject.split_to_chunks.should == [['test_dir/a', 'test_dir/b']]
+	raise 'more'
   end
 
 end

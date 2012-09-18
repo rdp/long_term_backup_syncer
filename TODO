@@ -1,14 +1,16 @@
 hard code create file "this many clients total"
 hard code local dropbox repo. possibly in a YAML file...
 
-
 client:
-
-notice files in there sans a lock file.
-copy them to local single backup dir.
-inc by adding your own file
+  notice files in there sans a lock file.
+  copy them to local single backup dir.
+  inc by adding your own file
 
 = someday =
+
+split too large of files
+
+encryption?
 
 allow "your brother to also sync your stuff" (hmm...just use the public part of it?
   require "shared" dropbox folder, with your brother? yeah that sounds sane...
