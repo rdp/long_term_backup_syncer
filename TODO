@@ -1,14 +1,16 @@
 hard code create file "this many clients total"
 hard code local dropbox repo. possibly in a YAML file...
 
+it can take real values
+
 client:
-  notice files in there sans an accompanying lock file.
   copy them to local single backup dir.
   inc by adding your own file
 
 = someday =
 
 add a file list/md5's so it can double check...
+  at least a "file sum" in the you can go for it...
 
 split too large of files
 

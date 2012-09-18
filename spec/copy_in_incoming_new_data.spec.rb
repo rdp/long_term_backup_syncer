@@ -11,7 +11,7 @@ describe IncomingCopier do
 	FileUtils.rm_rf 'test_dir.being_transferred'
 	FileUtils.rm_rf 'dropbox_root_dir'
 	Dir.mkdir 'dropbox_root_dir'
-    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.1, 0.5, 0, 1000, 2
+    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 0, 1000, 2
     @competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
   end
 
@@ -19,7 +19,7 @@ describe IncomingCopier do
     passed_gauntlet = false
 	stop_time = nil
 	start_time = Time.now
-    t = Thread.new { @subject.wait_for_files_to_appear; stop_time = Time.now}
+    t = Thread.new { @subject.wait_for_any_files_to_appear; stop_time = Time.now}
 	sleep 0.5
 	FileUtils.touch 'test_dir/a'
 	t.join
@@ -120,7 +120,7 @@ describe IncomingCopier do
     test_dir = File.expand_path '/tmp/test_dir.being_transferred'
 	begin
 	Dir.mkdir test_dir
-    subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 0.1, 0.5, 0, 1000, 2
+    subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 'longterm', 0.1, 0.5, 0, 1000, 2
 	FileUtils.mkdir_p test_dir + '/subdir'
     File.write test_dir + '/a', '_'
     File.write test_dir + '/subdir/b', '_'
@@ -133,8 +133,7 @@ describe IncomingCopier do
 	assert File.exist? "dropbox_root_dir/temp_transfer/subdir/b"
 	ensure
     FileUtils.rm_rf test_dir
-	end
-	
+	end	
   end
   
   it 'should do a complete multi-chunk transfer' do
@@ -143,7 +142,7 @@ describe IncomingCopier do
 	File.write 'test_dir/subdir/b', '_' * 1000 # TODO
 	t = Thread.new { @subject.go_single_transfer }	
 	2.times {
-	  while !File.exist?(@subject.you_can_go_for_it_file) # takes quite awhile [LODO check...]
+	  while !File.exist?(@subject.previous_you_can_go_for_it_file) # takes quite awhile [LODO check...]
 	    sleep 0.1
 	  end
 	  create_block_done_files
@@ -154,7 +153,7 @@ describe IncomingCopier do
 	
 	Dir['dropbox_root_dir/temp_transfer/*'].length.should == 0 # cleaned up drop box
 	assert !File.exist?(its_lock_file)
-	assert !File.exist?(@subject.you_can_go_for_it_file)
+	assert !File.exist?(@subject.previous_you_can_go_for_it_file)
 	assert !File.exist?('test_dir/a')
 	assert !File.exist?('test_dir.being_transferred/a')
 	assert !File.exist?('test_dir/subdir')
@@ -178,9 +177,35 @@ describe IncomingCopier do
   it 'should touch the you can go for it file' do
     @subject.create_lock_file
     @subject.touch_the_you_can_go_for_it_file
-	assert File.exist? "dropbox_root_dir//synchronization/begin_transfer_courtesy_#{Process.pid}"
+	assert File.exist? @subject.previous_you_can_go_for_it_file
 	proc { @subject.touch_the_you_can_go_for_it_file }.should raise_exception /not locked/
 	proc { @subject.copy_files_in_by_chunks }.should raise_exception /no files/
+  end
+  
+  describe 'the client receiver' do
+    it 'should be able to wait till it sees that something is ready to transfer' do
+      start_time = Time.now
+	  stop_time = nil
+      t = Thread.new { @subject.wait_for_transfer_file_come_up; stop_time = Time.now}
+	  sleep 0.3
+	  FileUtils.touch @subject.you_can_go_for_it_file
+	  t.join
+	  (Time.now - start_time).should be > 0.3
+	end
+
+    it 'should copy the files over' do
+ 	  File.write "dropbox_root_dir/temp_transfer/a", '_'
+	  FileUtils.mkdir "dropbox_root_dir/temp_transfer/subdir"
+ 	  File.write "dropbox_root_dir/temp_transfer/subdir/b", '_'
+	  @subject.copy_current_files_to_permanent_storage
+	  assert File.exist?('longterm_storage/a')  
+	  assert File.exist?('longterm_storage/subdir/b')
+	end
+	
+	# create its 'done' file
+
+    # should wait till that file is deleted...	
+	
   end
 
 end

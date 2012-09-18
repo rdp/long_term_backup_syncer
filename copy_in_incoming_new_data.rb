@@ -1,13 +1,6 @@
-=begin
-
-3. remove lock file
-4. wait till "x" clients have each picked it up.
-5. delete it
-=end
-
 class IncomingCopier
 
-  def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time, synchro_time, 
+  def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, longterm_storage_dir, sleep_time, synchro_time, 
         wait_for_all_clients_to_perform_local_dropbox_sync_time, dropbox_size, total_client_size
     @local_drop_here_to_save_dir = File.expand_path local_drop_here_to_save_dir
 	@sleep_time = sleep_time
@@ -16,9 +9,11 @@ class IncomingCopier
 	@dropbox_size = dropbox_size
 	@wait_for_all_clients_to_perform_local_dropbox_sync_time = wait_for_all_clients_to_perform_local_dropbox_sync_time
 	@total_client_size = total_client_size
+	@longterm_storage_dir = longterm_storage_dir
     FileUtils.mkdir_p lock_dir
     FileUtils.mkdir_p dropbox_temp_transfer_dir
     FileUtils.mkdir_p track_when_done_dir
+    @transfer_count = 0
   end
   
   attr_accessor :sleep_time
@@ -48,7 +43,7 @@ class IncomingCopier
     Dir[dir + '/**/*'].reject{|f| File.directory? f}
   end
 
-  def wait_for_files_to_appear
+  def wait_for_any_files_to_appear
     while files_incoming.length == 0
       sleep!
 	  print ','
@@ -77,8 +72,12 @@ class IncomingCopier
     "#{@dropbox_root_local_dir}/synchronization/request_#{Process.pid}.lock"
   end
   
+  def previous_you_can_go_for_it_file
+    "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}_#{@transfer_count}"
+  end
+  
   def you_can_go_for_it_file
-    "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}"
+    "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}_#{@transfer_count += 1}"
   end
   
   def touch_the_you_can_go_for_it_file
@@ -142,8 +141,8 @@ class IncomingCopier
 		current_group = [f]
 		current_sum = file_size
 	  else
-	     current_group << f
-		 current_sum += file_size
+	    current_group << f
+		current_sum += file_size
 	  end
 	}
 	out << current_group unless current_group.empty? # last group
@@ -169,7 +168,7 @@ class IncomingCopier
   	  wait_for_all_clients_to_perform_local_dropbox_sync
 	  touch_the_you_can_go_for_it_file
 	  wait_for_all_clients_to_copy_files_out
-	  File.delete you_can_go_for_it_file
+	  File.delete previous_you_can_go_for_it_file
 	  FileUtils.rm_rf dropbox_temp_transfer_dir
 	  Dir.mkdir dropbox_temp_transfer_dir
 	end
@@ -198,7 +197,7 @@ class IncomingCopier
   end
 
   def go_single_transfer
-    wait_for_files_to_appear
+    wait_for_any_files_to_appear
 	wait_for_incoming_files_to_stabilize_and_rename
 	obtain_lock
 	copy_files_in_by_chunks
@@ -206,4 +205,22 @@ class IncomingCopier
 	FileUtils.rm_rf renamed_being_transferred_dir # should be safe... :)
   end
   
+  def wait_for_transfer_file_come_up
+    while (files = Dir["#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_*"]).length == 0
+	  print 'c'
+	  sleep!
+	end
+	@current_transfer_file = files[0]	
+  end
+  
+  def copy_current_files_to_permanent_storage
+    FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir	
+  end
+  
+  def go_single_transfer_in
+    wait_for_transfer_file_come_up
+	copy_current_files_to_permanent_storage
+  end
+  
+ 
 end
