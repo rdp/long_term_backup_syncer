@@ -11,10 +11,11 @@
 
 class IncomingCopier
 
-  def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time
+  def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time, synchro_time
     @local_drop_here_to_save_dir = local_drop_here_to_save_dir
 	@sleep_time = sleep_time
 	@dropbox_root_local_dir = dropbox_root_local_dir
+	@synchro_time = synchro_time
     Dir.mkdir lock_dir unless File.directory?(lock_dir)
   end
   
@@ -71,12 +72,16 @@ class IncomingCopier
   
   # returns true if "we got the lock"
   def wait_for_lock_files_to_stabilize
-    100.times { sleep! } # TODO meter this ...
-	if Dir[lock_dir + '/*'].reject{|file| file == this_process_lock_file}.length > 0
-	  return false
-	else
-	  return true
+    start_time = Time.now
+    while Time.now - start_time < @synchro_time
+	  if Dir[lock_dir + '/*'] != [this_process_lock_file]
+	    File.delete this_process_lock_file # should be there...
+	    return false
+	  else
+	    sleep!
+	  end
 	end
+	true
   end
   
   def obtain_lock

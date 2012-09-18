@@ -10,7 +10,7 @@ describe IncomingCopier do
 	Dir.mkdir 'test_dir'
 	FileUtils.rm_rf 'dropbox_root_dir'
 	Dir.mkdir 'dropbox_root_dir'
-    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.2
+    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.1, 0.5
     @competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
   end
 
@@ -40,9 +40,13 @@ describe IncomingCopier do
 	(stop_time - start_time).should be > 0.5
   end
   
+  def its_lock_file
+     "dropbox_root_dir/synchronization/request_#{Process.pid}.lock"
+  end
   it 'should create a lock file' do
+	assert !File.exist?(its_lock_file)
     @subject.create_lock_file
-	assert File.exist? "dropbox_root_dir/synchronization/request_#{Process.pid}.lock"
+	assert File.exist?(its_lock_file)
   end
   
   it 'should back off if already locked' do
@@ -59,14 +63,28 @@ describe IncomingCopier do
   it 'should back off if lock file contention' do
 	FileUtils.touch @competitor
 	@subject.sleep_time = 0
+	@subject.create_lock_file
     assert !@subject.wait_for_lock_files_to_stabilize
+	assert !File.exist?(its_lock_file)
 	File.delete @competitor
+	@subject.create_lock_file
     assert @subject.wait_for_lock_files_to_stabilize
+	assert File.exist?(its_lock_file) # doesn't delete it this time
   end
   
   it 'should retry when it detects contention' do
-    
-  
+	start_time = Time.now
+	stop_time = nil
+    t = Thread.new { @subject.obtain_lock; stop_time = Time.now }
+	sleep 0.1
+	while(Time.now - start_time < 0.75)
+  	  FileUtils.touch @competitor
+	  sleep 0.1
+	  File.delete @competitor
+	  sleep 0.1
+	end
+	t.join
+	(stop_time - start_time).should be > 0.75
   end
 
 end
