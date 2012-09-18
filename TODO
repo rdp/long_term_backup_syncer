@@ -1,9 +1,13 @@
+= DEPRECATED =
+
 hard code create file "this many clients total"
 hard code local dropbox repo. possibly in a YAML file...
 
 take real values
 
 = someday =
+
+got-annex
 
 this could be more cost effective than other options, using amazon's freeze...
 
