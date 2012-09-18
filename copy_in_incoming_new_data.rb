@@ -217,6 +217,10 @@ class IncomingCopier
     FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir	
   end
   
+  def create_done_copying_files_to_local_file
+    FileUtils.touch track_when_done_dir + "/done_with_#{File.filename @current_transfer_file}" # LODO use
+  end
+  
   def go_single_transfer_in
     wait_for_transfer_file_come_up
 	copy_current_files_to_permanent_storage

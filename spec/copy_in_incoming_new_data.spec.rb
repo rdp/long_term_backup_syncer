@@ -202,8 +202,13 @@ describe IncomingCopier do
 	  assert File.exist?('longterm_storage/subdir/b')
 	end
 	
-	# create its 'done' file
-
+	it 'should create its done file' do
+      Dir[@subject.track_when_done_dir + '/*'].length.should == 0
+	  @subject.instance_variable_set(:@current_transfer_file, 'a_transfer')
+	  @subject.create_done_copying_files_to_local_file
+      Dir[@subject.track_when_done_dir + '/*'].length.should == 1
+	end
+	
     # should wait till that file is deleted...	
 	
   end
