@@ -140,14 +140,15 @@ describe IncomingCopier do
   it 'should do a complete multi-chunk transfer' do
     File.write 'test_dir/a', '_'
 	Dir.mkdir 'test_dir/subdir'
-	#File.write 'test_dir/subdir/b', '_' * 1000 # TODO
-	t = Thread.new { @subject.go_single_transfer}	
-	#2.times {
-	  while !File.exist?(@subject.you_can_go_for_it_file) # takes quite awhile [LODO]
+	File.write 'test_dir/subdir/b', '_' * 1000 # TODO
+	t = Thread.new { @subject.go_single_transfer }	
+	2.times {
+	  while !File.exist?(@subject.you_can_go_for_it_file) # takes quite awhile [LODO check...]
 	    sleep 0.1
 	  end
 	  create_block_done_files
-	#}
+	  sleep 0.2 # let it delete them
+	}
 	t.join
 	assert !File.exist?(@subject.track_when_done_dir + '/a') # old client done file
 	
