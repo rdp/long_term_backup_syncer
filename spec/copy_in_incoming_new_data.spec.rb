@@ -10,7 +10,7 @@ describe IncomingCopier do
 	Dir.mkdir 'test_dir'
 	FileUtils.rm_rf 'dropbox_root_dir'
 	Dir.mkdir 'dropbox_root_dir'
-    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.1, 0.5, 0, 1000
+    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.1, 0.5, 0, 1000, 2
     @competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
   end
 
@@ -109,7 +109,7 @@ describe IncomingCopier do
   
   it 'should copy files in' do
     test_dir = File.expand_path '/tmp/test_dir'
-    subject = IncomingCopier.new test_dir, 'dropbox_root_dir', 0.1, 0.5, 0, 1000
+    subject = IncomingCopier.new test_dir, 'dropbox_root_dir', 0.1, 0.5, 0, 1000, 2
 	FileUtils.mkdir_p test_dir + '/subdir'
     File.write test_dir + '/a', '_'
     File.write test_dir + '/subdir/b', '_'
@@ -124,6 +124,21 @@ describe IncomingCopier do
 	@subject.go_single_transfer
 	assert File.exist? 'dropbox_root_dir/temp_transfer/a'
 	assert !File.exist?(its_lock_file)
+  end
+  
+  # TODO add a file list/md5's so it can double check...
+  
+  it 'should wait for clients to finish downloading it' do
+    start_time = Time.now
+	stop_time = nil
+    t = Thread.new { @subject.wait_for_all_clients_to_copy_files_out; stop_time = Time.now}
+    FileUtils.touch @subject.track_when_done_dir + '/a'
+	sleep 0.5
+    FileUtils.touch @subject.track_when_done_dir + '/b'
+	t.join
+	(stop_time - start_time).should be < 1
+	(stop_time - start_time).should be > 0.5
+# should delete all the done files..
   end
 
 end

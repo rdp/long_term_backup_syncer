@@ -8,14 +8,17 @@
 class IncomingCopier
 
   def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time, synchro_time, 
-        wait_for_all_clients_to_perform_large_download_time, dropbox_size
+        wait_for_all_clients_to_perform_large_download_time, dropbox_size, total_client_size
     @local_drop_here_to_save_dir = File.expand_path local_drop_here_to_save_dir
 	@sleep_time = sleep_time
 	@dropbox_root_local_dir = File.expand_path dropbox_root_local_dir
 	@synchro_time = synchro_time
 	@dropbox_size = dropbox_size
 	@wait_for_all_clients_to_perform_large_download_time = wait_for_all_clients_to_perform_large_download_time
-    Dir.mkdir lock_dir unless File.directory?(lock_dir)
+	@total_client_size = total_client_size
+    FileUtils.mkdir_p lock_dir
+    FileUtils.mkdir_p transfer_dir
+    FileUtils.mkdir_p track_when_done_dir
   end
   
   attr_accessor :sleep_time
@@ -26,6 +29,10 @@ class IncomingCopier
   
   def lock_dir
     "#{@dropbox_root_local_dir}/synchronization"
+  end
+  
+  def track_when_done_dir
+    "#{@dropbox_root_local_dir}/track_who_is_done_dir"
   end
   
   def sleep!
@@ -135,6 +142,13 @@ class IncomingCopier
   
   def wait_for_all_clients_to_perform_large_download
     sleep @wait_for_all_clients_to_perform_large_download_time  
+  end
+  
+  def wait_for_all_clients_to_copy_files_out
+    while Dir[track_when_done_dir + '/*'].length != @total_client_size
+	  puts 'z'
+	  sleep!
+	end
   end
  
   def go_single_transfer
