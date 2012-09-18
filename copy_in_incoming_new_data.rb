@@ -41,7 +41,7 @@ class IncomingCopier
   
   def files_incoming(use_temp_renamed_local_dir = false)
     if use_temp_renamed_local_dir
-      dir = @local_drop_here_to_save_dir + ".being_transferred"
+      dir = renamed_being_transferred_dir
 	else
 	  dir = @local_drop_here_to_save_dir
 	end
@@ -68,7 +68,8 @@ class IncomingCopier
 	  print '-'
 	  current_size = size_incoming_files
     end
-	FileUtils.mv @local_drop_here_to_save_dir, @local_drop_here_to_save_dir + ".being_transferred"
+	assert !File.directory?(renamed_being_transferred_dir)
+	FileUtils.mv @local_drop_here_to_save_dir, renamed_being_transferred_dir
 	Dir.mkdir @local_drop_here_to_save_dir
   end
   
@@ -149,9 +150,13 @@ class IncomingCopier
 	out
   end
   
+  def renamed_being_transferred_dir
+    @local_drop_here_to_save_dir + '.being_transferred'
+  end
+  
   def copy_chunk_in chunk
   	for filename in chunk
-	  relative_extra_dir = filename[((@local_drop_here_to_save_dir + '.being_transferred').length + 1)..-1] # like "subdir/b"
+	  relative_extra_dir = filename[(renamed_being_transferred_dir.length + 1)..-1] # like "subdir/b"
 	  possibly_new_subdir = dropbox_temp_transfer_dir + '/' + File.dirname(relative_extra_dir)
 	  FileUtils.mkdir_p possibly_new_subdir # sooo lazy, also, could we use FileUtils.cp_r here?
 	  FileUtils.cp filename, possibly_new_subdir
@@ -183,7 +188,6 @@ class IncomingCopier
   end
   
   def wait_for_all_clients_to_copy_files_out
-  p caller
     while client_done_copying_files.length != @total_client_size
 	  print 'z'
 	  sleep!
@@ -199,7 +203,7 @@ class IncomingCopier
 	obtain_lock
 	copy_files_in_by_chunks
 	delete_lock_file
-	# delete local files	
+	FileUtils.rm_rf renamed_being_transferred_dir # should be safe... :)
   end
   
 end
