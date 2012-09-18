@@ -10,15 +10,19 @@
 class IncomingCopier
 
   def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time, synchro_time, dropbox_size
-    @local_drop_here_to_save_dir = local_drop_here_to_save_dir
+    @local_drop_here_to_save_dir = File.expand_path local_drop_here_to_save_dir
 	@sleep_time = sleep_time
-	@dropbox_root_local_dir = dropbox_root_local_dir
+	@dropbox_root_local_dir = File.expand_path dropbox_root_local_dir
 	@synchro_time = synchro_time
 	@dropbox_size = dropbox_size
     Dir.mkdir lock_dir unless File.directory?(lock_dir)
   end
   
   attr_accessor :sleep_time
+  
+  def transfer_dir
+    "#{@dropbox_root_local_dir}/temp_transfer"
+  end
   
   def lock_dir
     "#{@dropbox_root_local_dir}/synchronization"
@@ -96,24 +100,40 @@ class IncomingCopier
     out = []
 	current_group = []
 	current_sum = 0	
-    files_incoming.sort.each{|f| 
+	files_to_chunk = files_incoming.sort
+	raise 'no files' if files_to_chunk.empty?
+    files_to_chunk.each{|f| 
 	  file_size = File.size f
 	  raise 'cannot fit that file ever [yet!]' if file_size > @dropbox_size
-	  if File.size(f) +  current_sum > @dropbox_size
+	  if file_size + current_sum > @dropbox_size
 	    out << current_group
 		current_group = [f]
-		current_sum = 0
+		current_sum = file_size
 	  else
-	     out << current_group
+	     current_group << f
+		 current_sum += file_size
 	  end
 	}
+	out << current_group unless current_group.empty? # last group
 	out
   end
+  
+  def copy_files_in_by_chunks
+    @local_drop_here_to_save_dir
+    for chunk in split_to_chunks
+	dbg
+	  for file in chunk
+	    relative_extra_dir = File.expand_path[@local_drop_here_to_save_dir.length..-1]
+		p relative_extra_dir
+	  end
+	end
+  end
  
-  def go
+  def go_single_transfer
     wait_for_files_to_appear
 	wait_for_incoming_files_to_stabilize
 	obtain_lock
+	copy_files_in_by_chunks
   end
   
 end
