@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'sane'
 require 'rspec/autorun'
-require '../copy_in_incoming_new_data.rb'
+require '../lib/copy_in_incoming_new_data.rb'
 require 'fileutils'
 
 describe IncomingCopier do
@@ -138,8 +138,7 @@ describe IncomingCopier do
   def create_a_few_files_in_dropbox
     File.write 'test_dir/a', '_'
 	Dir.mkdir 'test_dir/subdir'
-	File.write 'test_dir/subdir/b', '_' * 1000
-  
+	File.write 'test_dir/subdir/b', '_' * 1000  
   end
   
   it 'should do a complete multi-chunk transfer' do
@@ -229,11 +228,14 @@ describe IncomingCopier do
 	
 	it 'should do full client receive loop' do
 	  create_a_few_files_in_dropbox
-	  t = Thread.new { @subject.go_single_transfer }
-	  #@subject.go_single_transfer_in
-	  #t.join
+      t = Thread.new { @subject.go_single_transfer }
+	  @subject.go_single_transfer_in
+	  @subject.go_single_transfer_in
+	  t.join
+	  assert File.exist?(@subject.longterm_storage_dir + '/a')
+	  assert File.exist?(@subject.longterm_storage_dir + '/subdir/b')
 	end
-		
+
   end
 
 end

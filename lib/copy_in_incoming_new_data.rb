@@ -17,6 +17,7 @@ class IncomingCopier
   end
   
   attr_accessor :sleep_time
+  attr_reader :longterm_storage_dir
   
   def dropbox_temp_transfer_dir
     "#{@dropbox_root_local_dir}/temp_transfer"
@@ -222,7 +223,8 @@ class IncomingCopier
   end
   
   def wait_till_current_transfer_is_over
-    assert File.exist? @current_transfer_file
+    # server might be too fast for us...maybe
+	# assert File.exist? @current_transfer_file
     while File.exist? @current_transfer_file
 	  print 'w'
 	  sleep!

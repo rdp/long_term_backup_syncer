@@ -3,11 +3,9 @@ hard code local dropbox repo. possibly in a YAML file...
 
 it can take real values
 
-client:
-  copy them to local single backup dir.
-  inc by adding your own file
-
 = someday =
+
+use the client done touch files more/better
 
 add a file list/md5's so it can double check...
   at least a "file sum" in the you can go for it...
