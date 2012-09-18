@@ -8,6 +8,7 @@ describe IncomingCopier do
   before do
 	FileUtils.rm_rf 'test_dir'
 	Dir.mkdir 'test_dir'
+	FileUtils.rm_rf 'test_dir.being_transferred'
 	FileUtils.rm_rf 'dropbox_root_dir'
 	Dir.mkdir 'dropbox_root_dir'
     @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.1, 0.5, 0, 1000, 2
@@ -29,7 +30,7 @@ describe IncomingCopier do
     a = File.open 'test_dir/a', 'w'
 	start_time = Time.now
 	stop_time = nil
-    t = Thread.new { @subject.wait_for_incoming_files_to_stabilize; stop_time = Time.now}
+    t = Thread.new { @subject.wait_for_incoming_files_to_stabilize_and_rename; stop_time = Time.now}
     while(Time.now - start_time < 0.5)
       a.puts 'hello'
       a.flush
@@ -38,6 +39,8 @@ describe IncomingCopier do
 	a.close
 	t.join
 	(stop_time - start_time).should be > 0.5
+	assert File.directory?('test_dir.being_transferred')
+	assert File.exist?('test_dir.being_transferred/a')
   end
   
   def its_lock_file
@@ -89,38 +92,42 @@ describe IncomingCopier do
 
   it 'should split incoming data to transferrable chunks' do
     proc { @subject.split_to_chunks}.should raise_exception(/no files/)
-	test_dir = File.expand_path 'test_dir'
+	test_dir = File.expand_path 'test_dir.being_transferred'
+	Dir.mkdir test_dir
 	a = test_dir + '/a'
 	b = test_dir + '/b'
 	c = test_dir + '/c'
 	d = test_dir + '/d'
 	e = test_dir + '/e'
-    File.write 'test_dir/a', '_'
+    File.write a, '_'
 	@subject.split_to_chunks.should == [[a]]
-	File.write 'test_dir/b', '_'
+	File.write b, '_'
 	@subject.split_to_chunks.should == [[a, b]]
-	File.write 'test_dir/c', '_'*1000
+	File.write c, '_'*1000
 	@subject.split_to_chunks.should == [[a, b], [c]]
-	File.write 'test_dir/d', '_'*100
+	File.write d, '_'*100
 	@subject.split_to_chunks.should == [[a, b], [c], [d]]
-	File.write 'test_dir/e', '_'*800
+	File.write e, '_'*800
 	@subject.split_to_chunks.should == [[a, b], [c], [d, e]]
   end
   
   it 'should copy files in' do
-    test_dir = File.expand_path '/tmp/test_dir'
-    subject = IncomingCopier.new test_dir, 'dropbox_root_dir', 0.1, 0.5, 0, 1000, 2
+    test_dir = File.expand_path '/tmp/test_dir.being_transferred'
+	Dir.mkdir test_dir
+    subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 0.1, 0.5, 0, 1000, 2
 	FileUtils.mkdir_p test_dir + '/subdir'
     File.write test_dir + '/a', '_'
     File.write test_dir + '/subdir/b', '_'
 	subject.copy_files_in_by_chunks
 	assert File.exist? "dropbox_root_dir/temp_transfer/a"
 	assert File.exist? "dropbox_root_dir/temp_transfer/subdir/b"
-    FileUtils.rm_rf '/tmp/test_dir'
+    FileUtils.rm_rf '/tmp/test_dir.being_transferred'
   end
   
   it 'should delete lock file after setting up a single transfer' do
     File.write 'test_dir/a', '_'
+    FileUtils.touch @subject.track_when_done_dir + '/a'
+    FileUtils.touch @subject.track_when_done_dir + '/b'
 	@subject.go_single_transfer
 	assert File.exist? 'dropbox_root_dir/temp_transfer/a'
 	assert !File.exist?(its_lock_file)
@@ -138,7 +145,14 @@ describe IncomingCopier do
 	t.join
 	(stop_time - start_time).should be < 1
 	(stop_time - start_time).should be > 0.5
-# should delete all the done files..
+	assert !File.exist?(@subject.track_when_done_dir + '/a')
+	assert !File.exist?(@subject.track_when_done_dir + '/b')
   end
+  
+  it 'should delete the files once they are gone' do
+  
+  end
+  
+  
 
 end

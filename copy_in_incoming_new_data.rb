@@ -17,13 +17,13 @@ class IncomingCopier
 	@wait_for_all_clients_to_perform_large_download_time = wait_for_all_clients_to_perform_large_download_time
 	@total_client_size = total_client_size
     FileUtils.mkdir_p lock_dir
-    FileUtils.mkdir_p transfer_dir
+    FileUtils.mkdir_p dropbox_temp_transfer_dir
     FileUtils.mkdir_p track_when_done_dir
   end
   
   attr_accessor :sleep_time
   
-  def transfer_dir
+  def dropbox_temp_transfer_dir
     "#{@dropbox_root_local_dir}/temp_transfer"
   end
   
@@ -39,8 +39,13 @@ class IncomingCopier
     sleep @sleep_time
   end
   
-  def files_incoming
-    Dir[@local_drop_here_to_save_dir + '/**/*'].reject{|f| File.directory? f}
+  def files_incoming(use_temp_renamed_local_dir = false)
+    if use_temp_renamed_local_dir
+      dir = @local_drop_here_to_save_dir + ".being_transferred"
+	else
+	  dir = @local_drop_here_to_save_dir
+	end
+    Dir[dir + '/**/*'].reject{|f| File.directory? f}
   end
 
   def wait_for_files_to_appear
@@ -54,7 +59,7 @@ class IncomingCopier
     sum = 0; files_incoming.each{|f| sum += File.size f}; sum  
   end
   
-  def wait_for_incoming_files_to_stabilize
+  def wait_for_incoming_files_to_stabilize_and_rename
     old_size = -1
 	current_size = size_incoming_files
     while(current_size != old_size) 
@@ -63,6 +68,8 @@ class IncomingCopier
 	  print '-'
 	  current_size = size_incoming_files
     end
+	FileUtils.mv @local_drop_here_to_save_dir, @local_drop_here_to_save_dir + ".being_transferred"
+	Dir.mkdir @local_drop_here_to_save_dir
   end
   
   def this_process_lock_file
@@ -107,8 +114,8 @@ class IncomingCopier
     out = []
 	current_group = []
 	current_sum = 0	
-	files_to_chunk = files_incoming.sort
-	raise 'no files' if files_to_chunk.empty?
+	files_to_chunk = files_incoming(true).sort
+	raise 'no files?' if files_to_chunk.empty?
     files_to_chunk.each{|f| 
 	  file_size = File.size f
 	  raise 'cannot fit that file ever [yet!]' if file_size > @dropbox_size
@@ -128,8 +135,8 @@ class IncomingCopier
   def copy_files_in_by_chunks
     for chunk in split_to_chunks
 	  for filename in chunk
-	    relative_extra_dir = filename[(@local_drop_here_to_save_dir.length + 1)..-1] # like "subdir/b"
-		new_subdir = transfer_dir + '/' + File.dirname(relative_extra_dir)
+	    relative_extra_dir = filename[((@local_drop_here_to_save_dir + '.being_transferred').length + 1)..-1] # like "subdir/b"
+		new_subdir = dropbox_temp_transfer_dir + '/' + File.dirname(relative_extra_dir)
 		FileUtils.mkdir_p new_subdir
 		FileUtils.cp filename, new_subdir		
 	  end
@@ -144,19 +151,28 @@ class IncomingCopier
     sleep @wait_for_all_clients_to_perform_large_download_time  
   end
   
+  def client_done_copying_files
+    Dir[track_when_done_dir + '/*']
+  end
+  
   def wait_for_all_clients_to_copy_files_out
-    while Dir[track_when_done_dir + '/*'].length != @total_client_size
-	  puts 'z'
+    while client_done_copying_files.length != @total_client_size
+	  print 'z'
 	  sleep!
 	end
+	for file in client_done_copying_files
+	  File.delete file
+	end
   end
- 
+  
+
   def go_single_transfer
     wait_for_files_to_appear
-	wait_for_incoming_files_to_stabilize
+	wait_for_incoming_files_to_stabilize_and_rename
 	obtain_lock
 	copy_files_in_by_chunks
 	wait_for_all_clients_to_perform_large_download
+	wait_for_all_clients_to_copy_files_out
 	delete_lock_file # allow them to copy it TODO umm...should we wait awhile?
   end
   
