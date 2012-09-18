@@ -112,6 +112,7 @@ describe IncomingCopier do
   
   it 'should copy files in' do
     subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 0.1, 0.5, 1000
+	Dir.mkdir '/tmp' unless File.directory '/tmp'
 	Dir.mkdir '/tmp/test_dir'
     File.write '/tmp/test_dir/a', '_'
 	Dir.mkdir '/tmp/test_dir/subdir'
