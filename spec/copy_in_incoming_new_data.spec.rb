@@ -137,21 +137,28 @@ describe IncomingCopier do
 	
   end
   
-  it 'should delete lock file after doing entire multi-chunk transfer' do
-    File.write 'test_dir/a', '_'	
+  it 'should do a complete multi-chunk transfer' do
+    File.write 'test_dir/a', '_'
+	Dir.mkdir 'test_dir/subdir'
+	#File.write 'test_dir/subdir/b', '_' * 1000 # TODO
 	t = Thread.new { @subject.go_single_transfer}	
-	while !File.exist?(@subject.you_can_go_for_it_file)
-	  sleep 0.1
-	end
-	create_block_done_files
+	#2.times {
+	  while !File.exist?(@subject.you_can_go_for_it_file) # takes quite awhile [LODO]
+	    sleep 0.1
+	  end
+	  create_block_done_files
+	#}
 	t.join
+	assert !File.exist?(@subject.track_when_done_dir + '/a') # old client done file
 	
-	assert !File.exist?('dropbox_root_dir/temp_transfer/a') # it cleans them up
+	Dir['dropbox_root_dir/temp_transfer/*'].length.should == 0 # cleaned up drop box
 	assert !File.exist?(its_lock_file)
 	assert !File.exist?(@subject.you_can_go_for_it_file)
+	assert !File.exist?('test_dir/a')
+	assert !File.exist?('test_dir.being_transferred/a')
+	assert !File.exist?('test_dir/subdir')
+	assert !File.exist?('test_dir.being_transferred/subdir')
   end
-  
-  # TODO add a file list/md5's so it can double check...
   
   it 'should wait for clients to finish downloading it' do
     start_time = Time.now
@@ -171,9 +178,8 @@ describe IncomingCopier do
     @subject.create_lock_file
     @subject.touch_the_you_can_go_for_it_file
 	assert File.exist? "dropbox_root_dir//synchronization/begin_transfer_courtesy_#{Process.pid}"
-	create_block_done_files
-	proc { @subject.touch_the_you_can_go_for_it_file }.should raise_exception
-	proc { @subject.copy_files_in_by_chunks }.should raise_exception
+	proc { @subject.touch_the_you_can_go_for_it_file }.should raise_exception /not locked/
+	proc { @subject.copy_files_in_by_chunks }.should raise_exception /no files/
   end
 
 end

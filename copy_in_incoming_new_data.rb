@@ -81,7 +81,7 @@ class IncomingCopier
   end
   
   def touch_the_you_can_go_for_it_file
-    assert have_lock? # just in case :P
+    assert have_lock?, "not locked?"
 	assert client_done_copying_files.length == 0 # just in case :P
     FileUtils.touch you_can_go_for_it_file
   end
@@ -152,12 +152,11 @@ class IncomingCopier
   def copy_chunk_in chunk
   	for filename in chunk
 	  relative_extra_dir = filename[((@local_drop_here_to_save_dir + '.being_transferred').length + 1)..-1] # like "subdir/b"
-	  new_subdir = dropbox_temp_transfer_dir + '/' + File.dirname(relative_extra_dir)
-	  FileUtils.mkdir_p new_subdir # sooo lazy
-	  FileUtils.cp filename, new_subdir		
+	  possibly_new_subdir = dropbox_temp_transfer_dir + '/' + File.dirname(relative_extra_dir)
+	  FileUtils.mkdir_p possibly_new_subdir # sooo lazy, also, could we use FileUtils.cp_r here?
+	  FileUtils.cp filename, possibly_new_subdir
 	end
   end
-
   
   def copy_files_in_by_chunks
     for chunk in split_to_chunks
@@ -184,6 +183,7 @@ class IncomingCopier
   end
   
   def wait_for_all_clients_to_copy_files_out
+  p caller
     while client_done_copying_files.length != @total_client_size
 	  print 'z'
 	  sleep!
