@@ -33,7 +33,7 @@ class IncomingCopier
   end
   
   def files_incoming
-    Dir[@local_drop_here_to_save_dir + '/**/*']
+    Dir[@local_drop_here_to_save_dir + '/**/*'].reject{|f| File.directory? f}
   end
 
   def wait_for_files_to_appear
@@ -119,12 +119,13 @@ class IncomingCopier
   end
   
   def copy_files_in_by_chunks
-    @local_drop_here_to_save_dir
     for chunk in split_to_chunks
-	dbg
-	  for file in chunk
-	    relative_extra_dir = File.expand_path[@local_drop_here_to_save_dir.length..-1]
-		p relative_extra_dir
+	p chunk
+	  for filename in chunk
+	    relative_extra_dir = filename[(@local_drop_here_to_save_dir.length + 1)..-1] # like "subdir/b"
+		new_subdir = transfer_dir + '/' + File.dirname(relative_extra_dir)
+		FileUtils.mkdir_p new_subdir
+		FileUtils.cp filename, new_subdir		
 	  end
 	end
   end

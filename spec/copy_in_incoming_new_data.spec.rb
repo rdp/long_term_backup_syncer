@@ -86,10 +86,7 @@ describe IncomingCopier do
 	t.join
 	(stop_time - start_time).should be > 0.75
   end
-  def dbg
-  require 'ruby-debug'
-  debugger
-  end
+
   it 'should split incoming data to transferrable chunks' do
     proc { @subject.split_to_chunks}.should raise_exception(/no files/)
 	test_dir = File.expand_path 'test_dir'
@@ -111,19 +108,15 @@ describe IncomingCopier do
   end
   
   it 'should copy files in' do
-    subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 0.1, 0.5, 1000
-	begin
-	Dir.mkdir '/tmp' unless File.directory? '/tmp'
-	Dir.mkdir '/tmp/test_dir'
-    File.write '/tmp/test_dir/a', '_'
-	Dir.mkdir '/tmp/test_dir/subdir'
-    File.write '/tmp/test_dir/subdir/b', '_'
+    test_dir = File.expand_path '/tmp/test_dir'
+    subject = IncomingCopier.new test_dir, 'dropbox_root_dir', 0.1, 0.5, 1000
+	FileUtils.mkdir_p test_dir + '/subdir'
+    File.write test_dir + '/a', '_'
+    File.write test_dir + '/subdir/b', '_'
 	subject.copy_files_in_by_chunks
 	assert File.exist? "dropbox_root_dir/temp_transfer/a"
 	assert File.exist? "dropbox_root_dir/temp_transfer/subdir/b"
-	ensure
-	  FileUtils.rm_rf '/tmp/test_dir'
-	end
+    FileUtils.rm_rf '/tmp/test_dir'
   end
 
 end
