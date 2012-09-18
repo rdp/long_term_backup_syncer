@@ -5,6 +5,13 @@ take real values
 
 = someday =
 
+this could be more cost effective than other options, using amazon's freeze...
+
+compress, dedupe
+
+differential backups for large changing files [?]
+  differential backup at all? :)
+  
 look at competitors for ideas
 
 ask people what they want
@@ -23,7 +30,7 @@ more "realtime" synchro...
 
 instead of waiting for lock, clients provide a "copy your file lock acknowledged" :)
   this is more 'realtime'
-  
+
 fancy shmancy GUI 'recover this from here'
 
 can right click on arbitrary directories "backup track this folder"
