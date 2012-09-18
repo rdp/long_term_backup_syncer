@@ -65,7 +65,7 @@ describe IncomingCopier do
   
   it 'should back off if lock file contention' do
 	FileUtils.touch @competitor
-	@subject.sleep_time = 0
+	@subject.sleep_time = 0.01
 	@subject.create_lock_file
     assert !@subject.wait_for_lock_files_to_stabilize
 	assert !File.exist?(its_lock_file)
@@ -135,10 +135,15 @@ describe IncomingCopier do
 	end	
   end
   
-  it 'should do a complete multi-chunk transfer' do
+  def create_a_few_files_in_dropbox
     File.write 'test_dir/a', '_'
 	Dir.mkdir 'test_dir/subdir'
-	File.write 'test_dir/subdir/b', '_' * 1000 # TODO
+	File.write 'test_dir/subdir/b', '_' * 1000
+  
+  end
+  
+  it 'should do a complete multi-chunk transfer' do
+    create_a_few_files_in_dropbox
 	t = Thread.new { @subject.go_single_transfer }	
 	2.times {
 	  while !File.exist?(@subject.previous_you_can_go_for_it_file) # takes quite awhile [LODO check...]
@@ -195,7 +200,7 @@ describe IncomingCopier do
 	  t.join
 	  @thread_took.should be > 0.3
 	end
-
+	
     it 'should copy the files over' do
  	  File.write "dropbox_root_dir/temp_transfer/a", '_'
 	  FileUtils.mkdir "dropbox_root_dir/temp_transfer/subdir"
@@ -223,7 +228,10 @@ describe IncomingCopier do
 	end
 	
 	it 'should do full client receive loop' do
-	  #@subject.
+	  create_a_few_files_in_dropbox
+	  t = Thread.new { @subject.go_single_transfer }
+	  #@subject.go_single_transfer_in
+	  #t.join
 	end
 		
   end
