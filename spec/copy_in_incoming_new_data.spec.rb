@@ -112,7 +112,8 @@ describe IncomingCopier do
   
   it 'should copy files in' do
     subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 0.1, 0.5, 1000
-	Dir.mkdir '/tmp' unless File.directory '/tmp'
+	begin
+	Dir.mkdir '/tmp' unless File.directory? '/tmp'
 	Dir.mkdir '/tmp/test_dir'
     File.write '/tmp/test_dir/a', '_'
 	Dir.mkdir '/tmp/test_dir/subdir'
@@ -120,6 +121,9 @@ describe IncomingCopier do
 	subject.copy_files_in_by_chunks
 	assert File.exist? "dropbox_root_dir/temp_transfer/a"
 	assert File.exist? "dropbox_root_dir/temp_transfer/subdir/b"
+	ensure
+	  FileUtils.rm_rf '/tmp/test_dir'
+	end
   end
 
 end
