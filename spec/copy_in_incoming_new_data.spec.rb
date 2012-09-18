@@ -124,8 +124,11 @@ describe IncomingCopier do
 	FileUtils.mkdir_p test_dir + '/subdir'
     File.write test_dir + '/a', '_'
     File.write test_dir + '/subdir/b', '_'
-	create_block_done_files
-	subject.copy_files_in_by_chunks
+	subject.create_lock_file
+	t = Thread.new {subject.copy_files_in_by_chunks}
+	sleep 0.2
+	create_block_done_files	
+	t.join
 	assert File.exist? "dropbox_root_dir/temp_transfer/a"
 	assert File.exist? "dropbox_root_dir/temp_transfer/subdir/b"
 	ensure
@@ -135,9 +138,14 @@ describe IncomingCopier do
   end
   
   it 'should delete lock file after setting up a single transfer' do
-    File.write 'test_dir/a', '_'
+    File.write 'test_dir/a', '_'	
+	t = Thread.new { @subject.go_single_transfer}	
+	while !File.exist?(@subject.you_can_go_for_it_file)
+	  sleep 0.1
+	end
 	create_block_done_files
-	@subject.go_single_transfer
+	t.join
+	
 	assert File.exist? 'dropbox_root_dir/temp_transfer/a'
 	assert !File.exist?(its_lock_file)
   end
@@ -159,8 +167,12 @@ describe IncomingCopier do
   end
   
   it 'should touch the you can go for it file' do
+    @subject.create_lock_file
     @subject.touch_the_you_can_go_for_it_file
 	assert File.exist? "dropbox_root_dir//synchronization/begin_transfer_courtesy_#{Process.pid}"
+	create_block_done_files
+	proc { @subject.touch_the_you_can_go_for_it_file }.should raise_exception
+	proc { @subject.copy_files_in_by_chunks }.should raise_exception
   end
   
   it 'should delete the files once they are gone' do
