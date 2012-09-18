@@ -76,6 +76,12 @@ class IncomingCopier
     "#{@dropbox_root_local_dir}/synchronization/request_#{Process.pid}.lock"
   end
   
+  def touch_the_you_can_go_for_it_file
+    assert have_lock? # just in case :P
+	assert client_done_copying_files.length == 0 # just in case :P
+    FileUtils.touch "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}"
+  end
+  
   def wait_if_already_has_lock_files
     raise 'locking confusion detected' if File.exist? this_process_lock_file
     while Dir[lock_dir + '/*'].length > 0
@@ -87,11 +93,15 @@ class IncomingCopier
     FileUtils.touch this_process_lock_file    
   end
   
+  def have_lock?
+    Dir[lock_dir + '/*'] != [this_process_lock_file]
+  end
+  
   # returns true if "we got the lock"
   def wait_for_lock_files_to_stabilize
     start_time = Time.now
     while Time.now - start_time < @synchro_time
-	  if Dir[lock_dir + '/*'] != [this_process_lock_file]
+	  if have_lock?
 	    delete_lock_file
 	    return false
 	  else
@@ -140,6 +150,11 @@ class IncomingCopier
 		FileUtils.mkdir_p new_subdir
 		FileUtils.cp filename, new_subdir		
 	  end
+  	  wait_for_all_clients_to_perform_large_download
+	  #touch_the_you_can_go_for_it_file
+	  wait_for_all_clients_to_copy_files_out
+	  # delete the you can go for it file
+	  # delete files from dropbox
 	end
   end
   
@@ -171,9 +186,8 @@ class IncomingCopier
 	wait_for_incoming_files_to_stabilize_and_rename
 	obtain_lock
 	copy_files_in_by_chunks
-	wait_for_all_clients_to_perform_large_download
-	wait_for_all_clients_to_copy_files_out
-	delete_lock_file # allow them to copy it TODO umm...should we wait awhile?
+	delete_lock_file
+	# delete local files	
   end
   
 end

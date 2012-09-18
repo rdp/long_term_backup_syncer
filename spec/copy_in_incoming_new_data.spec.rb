@@ -110,24 +110,33 @@ describe IncomingCopier do
 	File.write e, '_'*800
 	@subject.split_to_chunks.should == [[a, b], [c], [d, e]]
   end
+
+  def create_block_done_files
+    FileUtils.touch @subject.track_when_done_dir + '/a'
+    FileUtils.touch @subject.track_when_done_dir + '/b'
+  end  
   
   it 'should copy files in' do
     test_dir = File.expand_path '/tmp/test_dir.being_transferred'
+	begin
 	Dir.mkdir test_dir
     subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 0.1, 0.5, 0, 1000, 2
 	FileUtils.mkdir_p test_dir + '/subdir'
     File.write test_dir + '/a', '_'
     File.write test_dir + '/subdir/b', '_'
+	create_block_done_files
 	subject.copy_files_in_by_chunks
 	assert File.exist? "dropbox_root_dir/temp_transfer/a"
 	assert File.exist? "dropbox_root_dir/temp_transfer/subdir/b"
-    FileUtils.rm_rf '/tmp/test_dir.being_transferred'
+	ensure
+    FileUtils.rm_rf test_dir
+	end
+	
   end
   
   it 'should delete lock file after setting up a single transfer' do
     File.write 'test_dir/a', '_'
-    FileUtils.touch @subject.track_when_done_dir + '/a'
-    FileUtils.touch @subject.track_when_done_dir + '/b'
+	create_block_done_files
 	@subject.go_single_transfer
 	assert File.exist? 'dropbox_root_dir/temp_transfer/a'
 	assert !File.exist?(its_lock_file)
@@ -147,6 +156,11 @@ describe IncomingCopier do
 	(stop_time - start_time).should be > 0.5
 	assert !File.exist?(@subject.track_when_done_dir + '/a')
 	assert !File.exist?(@subject.track_when_done_dir + '/b')
+  end
+  
+  it 'should touch the you can go for it file' do
+    @subject.touch_the_you_can_go_for_it_file
+	assert File.exist? "dropbox_root_dir//synchronization/begin_transfer_courtesy_#{Process.pid}"
   end
   
   it 'should delete the files once they are gone' do
