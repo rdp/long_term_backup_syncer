@@ -8,13 +8,13 @@
 class IncomingCopier
 
   def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time, synchro_time, 
-        wait_for_all_clients_to_perform_large_download_time, dropbox_size, total_client_size
+        wait_for_all_clients_to_perform_local_dropbox_sync_time, dropbox_size, total_client_size
     @local_drop_here_to_save_dir = File.expand_path local_drop_here_to_save_dir
 	@sleep_time = sleep_time
 	@dropbox_root_local_dir = File.expand_path dropbox_root_local_dir
 	@synchro_time = synchro_time
 	@dropbox_size = dropbox_size
-	@wait_for_all_clients_to_perform_large_download_time = wait_for_all_clients_to_perform_large_download_time
+	@wait_for_all_clients_to_perform_local_dropbox_sync_time = wait_for_all_clients_to_perform_local_dropbox_sync_time
 	@total_client_size = total_client_size
     FileUtils.mkdir_p lock_dir
     FileUtils.mkdir_p dropbox_temp_transfer_dir
@@ -149,19 +149,25 @@ class IncomingCopier
 	out
   end
   
+  def copy_chunk_in chunk
+  	for filename in chunk
+	  relative_extra_dir = filename[((@local_drop_here_to_save_dir + '.being_transferred').length + 1)..-1] # like "subdir/b"
+	  new_subdir = dropbox_temp_transfer_dir + '/' + File.dirname(relative_extra_dir)
+	  FileUtils.mkdir_p new_subdir # sooo lazy
+	  FileUtils.cp filename, new_subdir		
+	end
+  end
+
+  
   def copy_files_in_by_chunks
     for chunk in split_to_chunks
-	  for filename in chunk
-	    relative_extra_dir = filename[((@local_drop_here_to_save_dir + '.being_transferred').length + 1)..-1] # like "subdir/b"
-		new_subdir = dropbox_temp_transfer_dir + '/' + File.dirname(relative_extra_dir)
-		FileUtils.mkdir_p new_subdir
-		FileUtils.cp filename, new_subdir		
-	  end
-  	  wait_for_all_clients_to_perform_large_download
+	  copy_chunk_in chunk
+  	  wait_for_all_clients_to_perform_local_dropbox_sync
 	  touch_the_you_can_go_for_it_file
 	  wait_for_all_clients_to_copy_files_out
-	  # delete the you can go for it file
-	  # delete files from dropbox
+	  File.delete you_can_go_for_it_file
+	  FileUtils.rm_rf dropbox_temp_transfer_dir
+	  Dir.mkdir dropbox_temp_transfer_dir
 	end
   end
   
@@ -169,8 +175,8 @@ class IncomingCopier
     File.delete this_process_lock_file
   end
   
-  def wait_for_all_clients_to_perform_large_download
-    sleep @wait_for_all_clients_to_perform_large_download_time  
+  def wait_for_all_clients_to_perform_local_dropbox_sync
+    sleep @wait_for_all_clients_to_perform_local_dropbox_sync_time  
   end
   
   def client_done_copying_files

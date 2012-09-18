@@ -125,7 +125,7 @@ describe IncomingCopier do
     File.write test_dir + '/a', '_'
     File.write test_dir + '/subdir/b', '_'
 	subject.create_lock_file
-	t = Thread.new {subject.copy_files_in_by_chunks}
+	t = Thread.new {subject.copy_chunk_in [test_dir + '/a', test_dir + '/subdir/b']}
 	sleep 0.2
 	create_block_done_files	
 	t.join
@@ -137,7 +137,7 @@ describe IncomingCopier do
 	
   end
   
-  it 'should delete lock file after setting up a single transfer' do
+  it 'should delete lock file after doing entire multi-chunk transfer' do
     File.write 'test_dir/a', '_'	
 	t = Thread.new { @subject.go_single_transfer}	
 	while !File.exist?(@subject.you_can_go_for_it_file)
@@ -146,8 +146,9 @@ describe IncomingCopier do
 	create_block_done_files
 	t.join
 	
-	assert File.exist? 'dropbox_root_dir/temp_transfer/a'
+	assert !File.exist?('dropbox_root_dir/temp_transfer/a') # it cleans them up
 	assert !File.exist?(its_lock_file)
+	assert !File.exist?(@subject.you_can_go_for_it_file)
   end
   
   # TODO add a file list/md5's so it can double check...
@@ -174,11 +175,5 @@ describe IncomingCopier do
 	proc { @subject.touch_the_you_can_go_for_it_file }.should raise_exception
 	proc { @subject.copy_files_in_by_chunks }.should raise_exception
   end
-  
-  it 'should delete the files once they are gone' do
-  
-  end
-  
-  
 
 end
