@@ -12,7 +12,7 @@ class IncomingCopier
 	@longterm_storage_dir = longterm_storage_dir
     FileUtils.mkdir_p lock_dir
     FileUtils.mkdir_p dropbox_temp_transfer_dir
-    FileUtils.mkdir_p track_when_done_dir
+    FileUtils.mkdir_p track_when_client_done_dir
     @transfer_count = 0
   end
   
@@ -26,7 +26,7 @@ class IncomingCopier
     "#{@dropbox_root_local_dir}/synchronization"
   end
   
-  def track_when_done_dir
+  def track_when_client_done_dir
     "#{@dropbox_root_local_dir}/track_who_is_done_dir"
   end
   
@@ -183,7 +183,7 @@ class IncomingCopier
   end
   
   def client_done_copying_files
-    Dir[track_when_done_dir + '/*']
+    Dir[track_when_client_done_dir + '/*']
   end
   
   def wait_for_all_clients_to_copy_files_out
@@ -213,17 +213,27 @@ class IncomingCopier
 	@current_transfer_file = files[0]	
   end
   
-  def copy_current_files_to_permanent_storage
+  def copy_current_files_to_local_permanent_storage
     FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir	
   end
   
   def create_done_copying_files_to_local_file
-    FileUtils.touch track_when_done_dir + "/done_with_#{File.filename @current_transfer_file}" # LODO use
+    FileUtils.touch track_when_client_done_dir + "/done_with_#{File.filename @current_transfer_file}" # LODO use
+  end
+  
+  def wait_till_current_transfer_is_over
+    assert File.exist? @current_transfer_file
+    while File.exist? @current_transfer_file
+	  print 'w'
+	  sleep!
+	end
   end
   
   def go_single_transfer_in
     wait_for_transfer_file_come_up
-	copy_current_files_to_permanent_storage
+	copy_current_files_to_local_permanent_storage
+	create_done_copying_files_to_local_file
+	wait_till_current_transfer_is_over
   end
   
  

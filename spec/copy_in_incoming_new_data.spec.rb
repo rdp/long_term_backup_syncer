@@ -11,7 +11,7 @@ describe IncomingCopier do
 	FileUtils.rm_rf 'test_dir.being_transferred'
 	FileUtils.rm_rf 'dropbox_root_dir'
 	Dir.mkdir 'dropbox_root_dir'
-    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 0, 1000, 2
+    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 0, 1000, 1
     @competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
   end
 
@@ -112,8 +112,7 @@ describe IncomingCopier do
   end
 
   def create_block_done_files
-    FileUtils.touch @subject.track_when_done_dir + '/a'
-    FileUtils.touch @subject.track_when_done_dir + '/b'
+    FileUtils.touch @subject.track_when_client_done_dir + '/client1_is_done'
   end  
   
   it 'should copy files in' do
@@ -149,7 +148,7 @@ describe IncomingCopier do
 	  sleep 0.2 # let it delete them
 	}
 	t.join
-	assert !File.exist?(@subject.track_when_done_dir + '/a') # old client done file
+	assert !File.exist?(@subject.track_when_client_done_dir + '/a') # old client done file
 	
 	Dir['dropbox_root_dir/temp_transfer/*'].length.should == 0 # cleaned up drop box
 	assert !File.exist?(its_lock_file)
@@ -163,15 +162,16 @@ describe IncomingCopier do
   it 'should wait for clients to finish downloading it' do
     start_time = Time.now
 	stop_time = nil
-    t = Thread.new { @subject.wait_for_all_clients_to_copy_files_out; stop_time = Time.now}
-    FileUtils.touch @subject.track_when_done_dir + '/a'
+    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 0, 1000, 2
+    t = time_in_other_thread { @subject.wait_for_all_clients_to_copy_files_out}
+    FileUtils.touch @subject.track_when_client_done_dir + '/a'
 	sleep 0.5
-    FileUtils.touch @subject.track_when_done_dir + '/b'
+    FileUtils.touch @subject.track_when_client_done_dir + '/b'
 	t.join
-	(stop_time - start_time).should be < 1
-	(stop_time - start_time).should be > 0.5
-	assert !File.exist?(@subject.track_when_done_dir + '/a')
-	assert !File.exist?(@subject.track_when_done_dir + '/b')
+	@thread_took.should be < 1
+	@thread_took.should be > 0.5
+	assert !File.exist?(@subject.track_when_client_done_dir + '/a')
+	assert !File.exist?(@subject.track_when_client_done_dir + '/b')
   end
   
   it 'should touch the you can go for it file' do
@@ -181,36 +181,51 @@ describe IncomingCopier do
 	proc { @subject.touch_the_you_can_go_for_it_file }.should raise_exception /not locked/
 	proc { @subject.copy_files_in_by_chunks }.should raise_exception /no files/
   end
+
+  def time_in_other_thread
+    start_time = Time.now
+    Thread.new { yield; @thread_took = Time.now - start_time}
+  end  
   
   describe 'the client receiver' do
     it 'should be able to wait till it sees that something is ready to transfer' do
-      start_time = Time.now
-	  stop_time = nil
-      t = Thread.new { @subject.wait_for_transfer_file_come_up; stop_time = Time.now}
+	  t = time_in_other_thread { @subject.wait_for_transfer_file_come_up }
 	  sleep 0.3
 	  FileUtils.touch @subject.you_can_go_for_it_file
 	  t.join
-	  (Time.now - start_time).should be > 0.3
+	  @thread_took.should be > 0.3
 	end
 
     it 'should copy the files over' do
  	  File.write "dropbox_root_dir/temp_transfer/a", '_'
 	  FileUtils.mkdir "dropbox_root_dir/temp_transfer/subdir"
  	  File.write "dropbox_root_dir/temp_transfer/subdir/b", '_'
-	  @subject.copy_current_files_to_permanent_storage
+	  @subject.copy_current_files_to_local_permanent_storage
 	  assert File.exist?('longterm_storage/a')  
 	  assert File.exist?('longterm_storage/subdir/b')
 	end
 	
 	it 'should create its done file' do
-      Dir[@subject.track_when_done_dir + '/*'].length.should == 0
+      Dir[@subject.track_when_client_done_dir + '/*'].length.should == 0
 	  @subject.instance_variable_set(:@current_transfer_file, 'a_transfer')
 	  @subject.create_done_copying_files_to_local_file
-      Dir[@subject.track_when_done_dir + '/*'].length.should == 1
+      Dir[@subject.track_when_client_done_dir + '/*'].length.should == 1
 	end
 	
-    # should wait till that file is deleted...	
+	it 'should wait until transfer is over with before trying anything else' do
+	  @subject.instance_variable_set(:@current_transfer_file, 'a_transfer')
+	  FileUtils.touch 'a_transfer'
+	  t = time_in_other_thread { @subject.wait_till_current_transfer_is_over }
+	  sleep 0.3
+	  File.delete 'a_transfer'
+      t.join
+	  @thread_took.should be > 0.3
+	end
 	
+	it 'should do full client receive loop' do
+	  #@subject.
+	end
+		
   end
 
 end
