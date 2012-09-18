@@ -1,9 +1,34 @@
 hard code create file "this many clients total"
 hard code local dropbox repo. possibly in a YAML file...
 
-it can take real values
+take real values
 
 = someday =
+
+look at competitors for ideas
+
+ask people what they want
+
+allow for removable media
+
+business option: "or backup to cloud"
+  amazon frozen :)
+  they pay, or have their own
+  or their own normal amazon?
+  or charge per use?
+
+status, etc.
+
+more "realtime" synchro...
+
+instead of waiting for lock, clients provide a "copy your file lock acknowledged" :)
+  this is more 'realtime'
+  
+fancy shmancy GUI 'recover this from here'
+
+can right click on arbitrary directories "backup track this folder"
+
+can limit cpu/bandwidth usage
 
 use the client done touch files more/better
 
