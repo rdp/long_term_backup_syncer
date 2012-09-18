@@ -1,7 +1,5 @@
 =begin
 
-2. copy in "a chunk"
-2.5 create "1 client has it"
 3. remove lock file
 4. wait till "x" clients have each picked it up.
 5. delete it
@@ -9,12 +7,14 @@
 
 class IncomingCopier
 
-  def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time, synchro_time, dropbox_size
+  def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, sleep_time, synchro_time, 
+        wait_for_all_clients_to_perform_large_download_time, dropbox_size
     @local_drop_here_to_save_dir = File.expand_path local_drop_here_to_save_dir
 	@sleep_time = sleep_time
 	@dropbox_root_local_dir = File.expand_path dropbox_root_local_dir
 	@synchro_time = synchro_time
 	@dropbox_size = dropbox_size
+	@wait_for_all_clients_to_perform_large_download_time = wait_for_all_clients_to_perform_large_download_time
     Dir.mkdir lock_dir unless File.directory?(lock_dir)
   end
   
@@ -78,7 +78,7 @@ class IncomingCopier
     start_time = Time.now
     while Time.now - start_time < @synchro_time
 	  if Dir[lock_dir + '/*'] != [this_process_lock_file]
-	    File.delete this_process_lock_file # should be there...
+	    delete_lock_file
 	    return false
 	  else
 	    sleep!
@@ -120,7 +120,6 @@ class IncomingCopier
   
   def copy_files_in_by_chunks
     for chunk in split_to_chunks
-	p chunk
 	  for filename in chunk
 	    relative_extra_dir = filename[(@local_drop_here_to_save_dir.length + 1)..-1] # like "subdir/b"
 		new_subdir = transfer_dir + '/' + File.dirname(relative_extra_dir)
@@ -129,12 +128,22 @@ class IncomingCopier
 	  end
 	end
   end
+  
+  def delete_lock_file
+    File.delete this_process_lock_file
+  end
+  
+  def wait_for_all_clients_to_perform_large_download
+    sleep @wait_for_all_clients_to_perform_large_download_time  
+  end
  
   def go_single_transfer
     wait_for_files_to_appear
 	wait_for_incoming_files_to_stabilize
 	obtain_lock
 	copy_files_in_by_chunks
+	wait_for_all_clients_to_perform_large_download
+	delete_lock_file # allow them to copy it TODO umm...should we wait awhile?
   end
   
 end

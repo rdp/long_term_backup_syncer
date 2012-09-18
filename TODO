@@ -2,7 +2,7 @@ hard code create file "this many clients total"
 hard code local dropbox repo. possibly in a YAML file...
 
 client:
-  notice files in there sans a lock file.
+  notice files in there sans an accompanying lock file.
   copy them to local single backup dir.
   inc by adding your own file
 

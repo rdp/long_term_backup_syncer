@@ -10,7 +10,7 @@ describe IncomingCopier do
 	Dir.mkdir 'test_dir'
 	FileUtils.rm_rf 'dropbox_root_dir'
 	Dir.mkdir 'dropbox_root_dir'
-    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.1, 0.5, 1000
+    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 0.1, 0.5, 0, 1000
     @competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
   end
 
@@ -109,7 +109,7 @@ describe IncomingCopier do
   
   it 'should copy files in' do
     test_dir = File.expand_path '/tmp/test_dir'
-    subject = IncomingCopier.new test_dir, 'dropbox_root_dir', 0.1, 0.5, 1000
+    subject = IncomingCopier.new test_dir, 'dropbox_root_dir', 0.1, 0.5, 0, 1000
 	FileUtils.mkdir_p test_dir + '/subdir'
     File.write test_dir + '/a', '_'
     File.write test_dir + '/subdir/b', '_'
@@ -117,6 +117,13 @@ describe IncomingCopier do
 	assert File.exist? "dropbox_root_dir/temp_transfer/a"
 	assert File.exist? "dropbox_root_dir/temp_transfer/subdir/b"
     FileUtils.rm_rf '/tmp/test_dir'
+  end
+  
+  it 'should delete lock file after setting up a single transfer' do
+    File.write 'test_dir/a', '_'
+	@subject.go_single_transfer
+	assert File.exist? 'dropbox_root_dir/temp_transfer/a'
+	assert !File.exist?(its_lock_file)
   end
 
 end
