@@ -5,6 +5,10 @@ hard code local dropbox repo. possibly in a YAML file...
 
 take real values
 
+= notes =
+
+NB that I don't think XXX has ability to "add from it from anywhere" or possibly keep vanilla copies around...
+
 = someday =
 
 git-annex?
