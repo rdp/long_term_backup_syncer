@@ -3,11 +3,23 @@
 hard code create file "this many clients total"
 hard code local dropbox repo. possibly in a YAML file...
 
-take real values
+take real values (GUI)
 
 = notes =
 
 NB that I don't think XXX has ability to "add from it from anywhere" or possibly keep vanilla copies around...
+
+= maybe =
+
+auto compress videos (lossless I guess)
+
+Maybe auto compress submissions...zip them right up? if they have non jpg?
+
+split too large of files  
+
+pick a new name
+  "fake real" website
+  distributable
 
 = someday =
 
@@ -15,15 +27,15 @@ auto...submit them to youtube, too?
 
 auto upload photos to facebook, too?
 
-auto compress videos (lossless I guess)
-
-Maybe auto compress submissions...zip them right up?
-
 git-annex?
+
+create a youtube upload "of images one per frame" as an image backup :)
+
+optionally "if it's bigger than x, then create new..."
 
 this could be more cost effective than other options, using amazon's freeze...
 
-compress, dedupe
+compress, dedupe...blocks?
 
 differential backups for large changing files [?]
   differential backup at all? :)
@@ -58,8 +70,6 @@ use the client done touch files more/better
 add a file list/md5's so it can double check...
   at least a "file sum" in the you can go for it...
 
-split too large of files
-
 encryption?
 
 allow "your brother to also sync your stuff" (hmm...just use the public part of it?
@@ -72,20 +82,9 @@ try it with icloud, too, why not?
 
 release an OS X client? :)
 
-pick a new name
-  "fake real" website
-  distributable
-
 can use gdrive + dropbox at the same time :)
 
-lossless hard core h264 on their way in [?]
-  as an option :P
-
 accomodate ftp
-
-accomodate files bigger than the transfer storage [gah]
-
-zip files [?]
 
 update/synchronize "this many clients total" file
 
