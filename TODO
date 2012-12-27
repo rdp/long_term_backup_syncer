@@ -8,6 +8,10 @@ at least a "file sum" in the you can go for it...
 GUI adjust option "this many clients total"
   GUI local dropbox repo. possibly in a YAML file...
 
+it should be able to transfer single files
+
+it should transfer empty directories
+  
 = maybe =
 
 innosetup

@@ -82,14 +82,15 @@ class IncomingCopier
     "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}_#{@transfer_count}"
   end
   
-  def you_can_go_for_it_file
+  def next_you_can_go_for_it_file
     "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}_#{@transfer_count += 1}"
   end
   
   def touch_the_you_can_go_for_it_file
     assert have_lock?, "not yet locked?"
 	assert client_done_copying_files.length == 0 # just in case :P
-    FileUtils.touch you_can_go_for_it_file
+	assert current_transfer_ready_files.length == 0 # just in case :P
+    FileUtils.touch next_you_can_go_for_it_file
   end
   
   def wait_if_already_has_lock_files
@@ -210,8 +211,7 @@ class IncomingCopier
 	copy_files_in_by_chunks
 	delete_lock_file
 	FileUtils.rm_rf renamed_being_transferred_dir # should be safe... :)
-  end  
-  
+  end
   
   require 'copy_from_server'
  

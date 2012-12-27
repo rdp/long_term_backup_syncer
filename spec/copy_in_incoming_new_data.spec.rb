@@ -195,7 +195,7 @@ describe IncomingCopier do
     it 'should be able to wait till it sees that something is ready to transfer' do
 	  t = time_in_other_thread { @subject.wait_for_transfer_file_come_up }
 	  sleep 0.3
-	  FileUtils.touch @subject.you_can_go_for_it_file
+	  FileUtils.touch @subject.next_you_can_go_for_it_file
 	  t.join
 	  @thread_took.should be > 0.3
 	end

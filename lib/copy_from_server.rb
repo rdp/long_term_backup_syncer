@@ -1,11 +1,16 @@
 
 class IncomingCopier
 
+  def current_transfer_ready_files
+    Dir["#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_*"]
+  end
+
   def wait_for_transfer_file_come_up
-    while (files = Dir["#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_*"]).length == 0
-	  print 'c'
+    while (files = current_transfer_ready_files).length == 0
 	  sleep!
+	  print 'c'
 	end
+	raise files.inspect + " should be size 1?" if files.length != 1
 	@current_transfer_file = files[0]	
   end
   
@@ -26,7 +31,7 @@ class IncomingCopier
 	end
   end
   
-  # the only one you should call...
+  # the only one you should have to call...
   def go_single_transfer_in
     wait_for_transfer_file_come_up
 	copy_current_files_to_local_permanent_storage
