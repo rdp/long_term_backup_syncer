@@ -1,9 +1,14 @@
-= DEPRECATED =
+= Yes do =
 
-hard code create file "this many clients total"
-hard code local dropbox repo. possibly in a YAML file...
+surely it doesn't sleep till they're done?
 
-take real values (GUI)
+use the client done touch files more/better
+
+add a file list/md5's so it can double check...
+  at least a "file sum" in the you can go for it...
+
+GUI adjust option "this many clients total"
+  GUI local dropbox repo. possibly in a YAML file...
 
 = notes =
 
@@ -11,17 +16,28 @@ NB that I don't think XXX has ability to "add from it from anywhere" or possibly
 
 = maybe =
 
-auto compress videos (lossless I guess)
+innosetup
 
-Maybe auto compress submissions...zip them right up? if they have non jpg?
-
-split too large of files  
+auto 7zip
+  optionally if they just have non jpg?
+  what's the best compression method here?
 
 pick a new name
   "fake real" website
   distributable
 
+pass through a "should be this size when you get it!"
+  
 = someday =
+
+auto compress videos (lossless for now)
+  does it help? does it work?
+
+keep a large YAML file of all files...
+
+it can "upload to a new candidate" that is added
+
+split too large of files
 
 auto...submit them to youtube, too?
 
@@ -39,10 +55,9 @@ compress, dedupe...blocks?
 
 differential backups for large changing files [?]
   differential backup at all? :)
+  no
   
 look at competitors for ideas
-
-ask people what they want
 
 allow for removable media
 
@@ -65,12 +80,8 @@ can right click on arbitrary directories "backup track this folder"
 
 can limit cpu/bandwidth usage
 
-use the client done touch files more/better
-
-add a file list/md5's so it can double check...
-  at least a "file sum" in the you can go for it...
-
 encryption?
+  no
 
 allow "your brother to also sync your stuff" (hmm...just use the public part of it?
   require "shared" dropbox folder, with your brother? yeah that sounds sane...
@@ -85,10 +96,6 @@ release an OS X client? :)
 can use gdrive + dropbox at the same time :)
 
 accomodate ftp
-
-update/synchronize "this many clients total" file
-
-nice'ish GUI.
 
 daemonizable..
   has icons at all LOL.
