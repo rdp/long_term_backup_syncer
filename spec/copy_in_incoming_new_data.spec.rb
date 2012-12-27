@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'sane'
 require 'rspec/autorun'
-require '../lib/copy_in_incoming_new_data.rb'
+require '../lib/copy_data_to_server.rb'
 require 'fileutils'
 
 describe IncomingCopier do
@@ -182,7 +182,7 @@ describe IncomingCopier do
     @subject.create_lock_file
     @subject.touch_the_you_can_go_for_it_file
 	assert File.exist? @subject.previous_you_can_go_for_it_file
-	proc { @subject.touch_the_you_can_go_for_it_file }.should raise_exception /not locked/
+	proc { @subject.touch_the_you_can_go_for_it_file }.should raise_exception /not yet locked/
 	proc { @subject.copy_files_in_by_chunks }.should raise_exception /no files/
   end
 
