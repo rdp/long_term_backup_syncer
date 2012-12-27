@@ -36,8 +36,9 @@ class IncomingCopier
     "#{@dropbox_root_local_dir}/track_who_is_done_dir"
   end
   
-  def sleep!
+  def sleep!(output_char)
     sleep @sleep_time
+	print output_char
   end
   
   def files_incoming(use_temp_renamed_local_dir = false)
@@ -51,8 +52,7 @@ class IncomingCopier
 
   def wait_for_any_files_to_appear
     while files_incoming.length == 0
-      sleep!
-	  print ','
+      sleep!(',')
     end
   end
 
@@ -60,13 +60,12 @@ class IncomingCopier
     sum = 0; files_incoming.each{|f| sum += File.size f}; sum  
   end
   
-  def wait_for_incoming_files_to_stabilize_and_rename
+  def wait_for_incoming_files_to_stabilize_and_rename_entire_dir
     old_size = -1
 	current_size = size_incoming_files
     while(current_size != old_size) 
       old_size = current_size
-      sleep!
-	  print '-'
+      sleep!('-')
 	  current_size = size_incoming_files
     end
 	assert !File.directory?(renamed_being_transferred_dir)
@@ -96,8 +95,7 @@ class IncomingCopier
   def wait_if_already_has_lock_files
     raise 'locking confusion detected' if File.exist? this_process_lock_file
     while Dir[lock_dir + '/*'].length > 0
-	  sleep!
-	  print 'l'
+	  sleep!('l')
 	end
   end
   
@@ -117,8 +115,7 @@ class IncomingCopier
 	    delete_lock_file
 	    return false
 	  else
-  	    print 'l-'
-	    sleep!
+	    sleep!('l-')
 	  end
 	end
 	true
@@ -195,8 +192,7 @@ class IncomingCopier
   
   def wait_for_all_clients_to_copy_files_out
     while client_done_copying_files.length != @total_client_size
-	  print 'z'
-	  sleep!
+	  sleep!('z')
 	end
 	for file in client_done_copying_files
 	  File.delete file
@@ -206,7 +202,7 @@ class IncomingCopier
   # the only one you should call...
   def go_single_transfer_out
     wait_for_any_files_to_appear
-	wait_for_incoming_files_to_stabilize_and_rename # them
+	wait_for_incoming_files_to_stabilize_and_rename_entire_dir # them
 	obtain_lock
 	copy_files_in_by_chunks
 	delete_lock_file

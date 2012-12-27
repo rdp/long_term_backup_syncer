@@ -30,7 +30,7 @@ describe IncomingCopier do
     a = File.open 'test_dir/a', 'w'
 	start_time = Time.now
 	stop_time = nil
-    t = Thread.new { @subject.wait_for_incoming_files_to_stabilize_and_rename; stop_time = Time.now}
+    t = Thread.new { @subject.wait_for_incoming_files_to_stabilize_and_rename_entire_dir; stop_time = Time.now}
     while(Time.now - start_time < 0.5)
       a.puts 'hello'
       a.flush

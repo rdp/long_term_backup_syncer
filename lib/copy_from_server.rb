@@ -7,8 +7,7 @@ class IncomingCopier
 
   def wait_for_transfer_file_come_up
     while (files = current_transfer_ready_files).length == 0
-	  sleep!
-	  print 'c'
+	  sleep!('c')
 	end
 	raise files.inspect + " should be size 1?" if files.length != 1
 	@current_transfer_file = files[0]	
@@ -26,8 +25,7 @@ class IncomingCopier
     # server might be too fast for us...maybe
 	# assert File.exist? @current_transfer_file
     while File.exist? @current_transfer_file
-	  print 'w'
-	  sleep!
+	  sleep!('w')
 	end
   end
   
