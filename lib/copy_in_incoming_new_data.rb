@@ -1,3 +1,6 @@
+$: << File.dirname(__FILE__) + "/../vendor/simple_gui_creator/lib"
+require 'simple_gui_creator'
+
 class IncomingCopier
 
   def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, longterm_storage_dir, sleep_time, synchro_time, 
