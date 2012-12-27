@@ -26,6 +26,7 @@ class IncomingCopier
 	end
   end
   
+  # the only one you should call...
   def go_single_transfer_in
     wait_for_transfer_file_come_up
 	copy_current_files_to_local_permanent_storage

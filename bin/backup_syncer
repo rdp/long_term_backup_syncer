@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + "/../lib/copy_in_incoming_new_data.rb"
-require File.dirname(__FILE__) + "/../lib/go_hard_coded.rb" # does it
+require File.dirname(__FILE__) + "/../lib/go_hard_coded.rb" # gives us $subject
 
 puts 'remember to pre-zip them (and videos too) for now, if desired!'
 
-Thread.new { loop { $subject.go_single_transfer }}
+Thread.new { loop { $subject.go_single_transfer_out }}
 loop { $subject.go_single_transfer_in }

@@ -6,13 +6,13 @@ require 'fileutils'
 class IncomingCopier
 
   def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, longterm_storage_dir, sleep_time, synchro_time, 
-        wait_for_all_clients_to_perform_local_dropbox_sync_time, dropbox_size, total_client_size
+        sleep_time_to_let_it_get_to_server, dropbox_size, total_client_size
     @local_drop_here_to_save_dir = File.expand_path local_drop_here_to_save_dir
 	@sleep_time = sleep_time
 	@dropbox_root_local_dir = File.expand_path dropbox_root_local_dir
 	@synchro_time = synchro_time
 	@dropbox_size = dropbox_size
-	@wait_for_all_clients_to_perform_local_dropbox_sync_time = wait_for_all_clients_to_perform_local_dropbox_sync_time
+	@sleep_time_to_let_it_get_to_server = sleep_time_to_let_it_get_to_server
 	@total_client_size = total_client_size
 	@longterm_storage_dir = longterm_storage_dir
     FileUtils.mkdir_p lock_dir
@@ -23,7 +23,7 @@ class IncomingCopier
   
   attr_accessor :sleep_time
   attr_reader :longterm_storage_dir
-  
+
   def dropbox_temp_transfer_dir
     "#{@dropbox_root_local_dir}/temp_transfer"
   end
@@ -185,7 +185,7 @@ class IncomingCopier
   end
   
   def wait_for_all_clients_to_perform_local_dropbox_sync
-    sleep @wait_for_all_clients_to_perform_local_dropbox_sync_time  
+    sleep @sleep_time_to_let_it_get_to_server  
   end
   
   def client_done_copying_files
@@ -202,14 +202,16 @@ class IncomingCopier
 	end
   end
 
-  def go_single_transfer
+  # the only one you should call...
+  def go_single_transfer_out
     wait_for_any_files_to_appear
-	wait_for_incoming_files_to_stabilize_and_rename
+	wait_for_incoming_files_to_stabilize_and_rename # them
 	obtain_lock
 	copy_files_in_by_chunks
 	delete_lock_file
 	FileUtils.rm_rf renamed_being_transferred_dir # should be safe... :)
   end  
+  
   
   require 'copy_from_server'
  
