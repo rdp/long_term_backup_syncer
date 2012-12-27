@@ -144,8 +144,11 @@ describe IncomingCopier do
   it 'should do a complete multi-chunk transfer' do
     create_a_few_files_in_dropbox
 	t = Thread.new { @subject.go_single_transfer_out }	
+	while !@subject.previous_you_can_go_for_it_size_file
+	  sleep 0.1
+	end
 	2.times {
-	  while !File.exist?(@subject.previous_you_can_go_for_it_file) # takes quite awhile [LODO check...]
+	  while !File.exist?(@subject.previous_you_can_go_for_it_size_file) # takes quite awhile [LODO check...]
 	    sleep 0.1
 	  end
 	  create_block_done_files
@@ -156,7 +159,7 @@ describe IncomingCopier do
 	
 	Dir['dropbox_root_dir/temp_transfer/*'].length.should == 0 # cleaned up drop box
 	assert !File.exist?(its_lock_file)
-	assert !File.exist?(@subject.previous_you_can_go_for_it_file)
+	assert !File.exist?(@subject.previous_you_can_go_for_it_size_file)
 	assert !File.exist?('test_dir/a')
 	assert !File.exist?('test_dir.being_transferred/a')
 	assert !File.exist?('test_dir/subdir')
@@ -180,9 +183,9 @@ describe IncomingCopier do
   
   it 'should touch the you can go for it file' do
     @subject.create_lock_file
-    @subject.touch_the_you_can_go_for_it_file
-	assert File.exist? @subject.previous_you_can_go_for_it_file
-	proc { @subject.touch_the_you_can_go_for_it_file }.should raise_exception /not yet locked/
+    @subject.touch_the_you_can_go_for_it_file(777)
+	assert File.exist? @subject.previous_you_can_go_for_it_size_file
+	proc { @subject.touch_the_you_can_go_for_it_file(787) }.should raise_exception /should be locked/
 	proc { @subject.copy_files_in_by_chunks }.should raise_exception /no files/
   end
 
@@ -195,7 +198,7 @@ describe IncomingCopier do
     it 'should be able to wait till it sees that something is ready to transfer' do
 	  t = time_in_other_thread { @subject.wait_for_transfer_file_come_up }
 	  sleep 0.3
-	  FileUtils.touch @subject.next_you_can_go_for_it_file
+	  FileUtils.touch @subject.next_you_can_go_for_it_after_size_file(767)
 	  t.join
 	  @thread_took.should be > 0.3
 	end

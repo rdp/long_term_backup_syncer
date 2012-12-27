@@ -77,19 +77,19 @@ class IncomingCopier
     "#{@dropbox_root_local_dir}/synchronization/request_#{Process.pid}.lock"
   end
   
-  def previous_you_can_go_for_it_file
-    "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}_#{@transfer_count}"
+  def previous_you_can_go_for_it_size_file
+    @previous_go_for_it_filename
   end
   
-  def next_you_can_go_for_it_file
-    "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}_#{@transfer_count += 1}"
+  def next_you_can_go_for_it_after_size_file(current_chunk_size)
+    @previous_go_for_it_filename = "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}_#{@transfer_count += 1}_#{current_chunk_size}"
   end
   
-  def touch_the_you_can_go_for_it_file
-    assert have_lock?, "not yet locked?"
+  def touch_the_you_can_go_for_it_file current_chunk_size
+    assert have_lock?, "should be locked"
 	assert client_done_copying_files.length == 0 # just in case :P
 	assert current_transfer_ready_files.length == 0 # just in case :P
-    FileUtils.touch next_you_can_go_for_it_file
+    FileUtils.touch next_you_can_go_for_it_after_size_file(current_chunk_size)
   end
   
   def wait_if_already_has_lock_files
@@ -168,11 +168,12 @@ class IncomingCopier
   
   def copy_files_in_by_chunks
     for chunk in split_to_chunks
+	  size = 0
+	  chunk.each{|f| size += File.size(f) }
 	  copy_chunk_in chunk
-  	  give_dropbox_some_time_to_copy_files_in
-	  touch_the_you_can_go_for_it_file
+  	  touch_the_you_can_go_for_it_file size
 	  wait_for_all_clients_to_copy_files_out
-	  File.delete previous_you_can_go_for_it_file
+	  File.delete previous_you_can_go_for_it_size_file
 	  FileUtils.rm_rf dropbox_temp_transfer_dir
 	  Dir.mkdir dropbox_temp_transfer_dir
 	end
@@ -180,10 +181,6 @@ class IncomingCopier
   
   def delete_lock_file
     File.delete this_process_lock_file
-  end
-  
-  def give_dropbox_some_time_to_copy_files_in
-    sleep!('t', @sleep_time_to_let_it_get_to_server)
   end
   
   def client_done_copying_files
