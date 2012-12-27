@@ -1,39 +1,38 @@
 = Yes do =
 
 surely it doesn't sleep till they're done?
+  use the client done touch files more/better
 
-use the client done touch files more/better
-
-add a file list/md5's so it can double check...
-  at least a "file sum" in the you can go for it...
+at least a "file sum" in the you can go for it...
 
 GUI adjust option "this many clients total"
   GUI local dropbox repo. possibly in a YAML file...
-
-= notes =
-
-NB that I don't think XXX has ability to "add from it from anywhere" or possibly keep vanilla copies around...
 
 = maybe =
 
 innosetup
 
 auto 7zip
+  any single files
   optionally if they just have non jpg?
   what's the best compression method here?
 
 pick a new name
   "fake real" website
   distributable
-
-pass through a "should be this size when you get it!"
   
 = someday =
+
+NB that I don't think XXX has ability to "add from it from anywhere" or possibly keep vanilla copies around...
+  tell them
+
+add a file list/md5's so it can double check the transfer succeeded...
 
 auto compress videos (lossless for now)
   does it help? does it work?
 
 keep a large YAML file of all files...
+  maybe on every client [?]
 
 it can "upload to a new candidate" that is added
 

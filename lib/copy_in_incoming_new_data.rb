@@ -45,7 +45,7 @@ class IncomingCopier
 	else
 	  dir = @local_drop_here_to_save_dir
 	end
-    Dir[dir + '/**/*'].reject{|f| File.directory? f}
+    Dir[dir + '/**/*'].reject{|f| File.directory? f} # don't care about empty directories [?] TODO care :)
   end
 
   def wait_for_any_files_to_appear
@@ -86,7 +86,7 @@ class IncomingCopier
   end
   
   def touch_the_you_can_go_for_it_file
-    assert have_lock?, "not locked?"
+    assert have_lock?, "not yet locked?"
 	assert client_done_copying_files.length == 0 # just in case :P
     FileUtils.touch you_can_go_for_it_file
   end
