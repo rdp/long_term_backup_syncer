@@ -143,7 +143,7 @@ describe IncomingCopier do
   
   it 'should do a complete multi-chunk transfer' do
     create_a_few_files_in_dropbox
-	t = Thread.new { @subject.go_single_transfer }	
+	t = Thread.new { @subject.go_single_transfer_out }	
 	2.times {
 	  while !File.exist?(@subject.previous_you_can_go_for_it_file) # takes quite awhile [LODO check...]
 	    sleep 0.1
@@ -228,7 +228,7 @@ describe IncomingCopier do
 	
 	it 'should do full client receive loop' do
 	  create_a_few_files_in_dropbox
-      t = Thread.new { @subject.go_single_transfer }
+      t = Thread.new { @subject.go_single_transfer_out }
 	  @subject.go_single_transfer_in
 	  @subject.go_single_transfer_in
 	  t.join

@@ -171,7 +171,7 @@ class IncomingCopier
   def copy_files_in_by_chunks
     for chunk in split_to_chunks
 	  copy_chunk_in chunk
-  	  wait_for_all_clients_to_perform_local_dropbox_sync
+  	  give_dropbox_some_time_to_copy_files_in
 	  touch_the_you_can_go_for_it_file
 	  wait_for_all_clients_to_copy_files_out
 	  File.delete previous_you_can_go_for_it_file
@@ -184,7 +184,7 @@ class IncomingCopier
     File.delete this_process_lock_file
   end
   
-  def wait_for_all_clients_to_perform_local_dropbox_sync
+  def give_dropbox_some_time_to_copy_files_in
     sleep @sleep_time_to_let_it_get_to_server  
   end
   
