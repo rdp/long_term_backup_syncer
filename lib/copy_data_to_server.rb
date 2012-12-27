@@ -36,8 +36,8 @@ class IncomingCopier
     "#{@dropbox_root_local_dir}/track_who_is_done_dir"
   end
   
-  def sleep!(output_char)
-    sleep @sleep_time
+  def sleep!(output_char, sleep_time=@sleep_time)
+    sleep sleep_time
 	print output_char
   end
   
@@ -183,7 +183,7 @@ class IncomingCopier
   end
   
   def give_dropbox_some_time_to_copy_files_in
-    sleep @sleep_time_to_let_it_get_to_server  
+    sleep!('t', @sleep_time_to_let_it_get_to_server)
   end
   
   def client_done_copying_files
