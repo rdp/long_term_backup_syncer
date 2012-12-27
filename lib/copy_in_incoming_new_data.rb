@@ -1,5 +1,6 @@
 $: << File.dirname(__FILE__) + "/../vendor/simple_gui_creator/lib"
 require 'simple_gui_creator'
+require 'fileutils'
 
 class IncomingCopier
 
