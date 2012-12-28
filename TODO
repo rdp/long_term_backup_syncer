@@ -19,6 +19,10 @@ pick a new name
   
 = someday =
 
+better folders, don't re-mkdir them if they don't exist
+
+prompt for "google drive ok?" for init
+
 gui show status updates, also warn when one client appears to be lagging
 
 work with disconnected storage somehow...
