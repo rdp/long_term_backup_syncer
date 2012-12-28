@@ -74,7 +74,7 @@ class IncomingCopier
     current_size = size_incoming_files
     while(current_size != old_size) 
       old_size = current_size
-      sleep!('wait_for_incoming_files_to_stabilize_and_rename_entire_dir')
+      sleep!('wait_for_incoming_files_to_stabilize_and_rename_entire_dir', @sleep_time*6)
       current_size = size_incoming_files
     end
 	if @prompt_before_uploading
