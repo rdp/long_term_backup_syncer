@@ -4,17 +4,19 @@ test it between 2 computers at work
   
 = maybe =
 
-it should be able to capture to 2 places, same computer
+maybe a "go" button when syncing up?  or a prompt at least
   
+= someday =
+
+it should be able to capture to 2 places, same computer
+
 innosetup
 
 pick a new name
   "fake real" website
   distributable
-  
-= someday =
 
-combine the google drive folders...
+combine the google drive folders into subfolders
 
 "this many are currently online"
   "each is doing this..."
@@ -23,7 +25,6 @@ warn on too many files "you should really be zipping this, buddy!"
 
 "daemonize" mode vs. setup
   
-maybe a "go" button when syncing up?  or a prompt at least
 
 cleanup shutdown code it raises an exception?
 
