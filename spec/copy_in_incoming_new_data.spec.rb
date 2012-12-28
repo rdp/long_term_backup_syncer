@@ -19,14 +19,11 @@ describe IncomingCopier do
   end
 
   it 'should wait for incoming data' do
-    passed_gauntlet = false
-	stop_time = nil
-	start_time = Time.now
-    t = Thread.new { @subject.wait_for_any_files_to_appear; stop_time = Time.now}
-	sleep 0.5
+    t = time_in_other_thread { @subject.wait_for_any_files_to_appear }
+	sleep 0.3
 	FileUtils.touch 'test_dir/a'
 	t.join
-	(stop_time - start_time).should be > 0.5
+	@thread_took.should be > 0.3
   end
   
   it 'should wait for data to stabilize' do
@@ -189,11 +186,11 @@ describe IncomingCopier do
     @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 1000, 2
     t = time_in_other_thread { @subject.wait_for_all_clients_to_copy_files_out}
     FileUtils.touch @subject.track_when_client_done_dir + '/a'
-	sleep 0.5
+	sleep 0.3
     FileUtils.touch @subject.track_when_client_done_dir + '/b'
 	t.join
 	@thread_took.should be < 1
-	@thread_took.should be > 0.5
+	@thread_took.should be > 0.3
 	assert !File.exist?(@subject.track_when_client_done_dir + '/a')
 	assert !File.exist?(@subject.track_when_client_done_dir + '/b')
   end
