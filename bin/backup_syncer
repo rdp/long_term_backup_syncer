@@ -1,2 +1,0 @@
-$: << File.dirname(__FILE__) + "/../lib"
-require "go_hard_coded.rb"
