@@ -15,10 +15,13 @@ class IncomingCopier
     FileUtils.mkdir_p dropbox_temp_transfer_dir
     FileUtils.mkdir_p track_when_client_done_dir
     @transfer_count = 0
+	@prompt_before_uploading = nil
   end
   
   attr_accessor :sleep_time
   attr_reader :longterm_storage_dir
+  attr_accessor :prompt_before_uploading
+  attr_reader :local_drop_here_to_save_dir
 
   def dropbox_temp_transfer_dir
     "#{@dropbox_root_local_dir}/temp_transfer"
@@ -64,7 +67,7 @@ class IncomingCopier
 	  SimpleGuiCreator.show_message("warning, cleaning up from previous run? #{renamed_being_transferred_dir}")
 	  FileUtils.rm_rf renamed_being_transferred_dir
 	end
-  end
+  end  
   
   def wait_for_incoming_files_to_stabilize_and_rename_entire_dir
     old_size = -1
@@ -74,7 +77,11 @@ class IncomingCopier
       sleep!('-')
       current_size = size_incoming_files
     end
-    assert !File.directory?(renamed_being_transferred_dir)
+	if @prompt_before_uploading
+	  @prompt_before_uploading.call
+	end
+	
+    assert !File.directory?(renamed_being_transferred_dir) # should have been cleaned up...
     FileUtils.mv @local_drop_here_to_save_dir, renamed_being_transferred_dir
     Dir.mkdir @local_drop_here_to_save_dir
   end
@@ -216,7 +223,7 @@ class IncomingCopier
   # the only one you should call...
   def go_single_transfer_out
     wait_for_any_files_to_appear
-    wait_for_incoming_files_to_stabilize_and_rename_entire_dir # them
+    wait_for_incoming_files_to_stabilize_and_rename_entire_dir
     obtain_lock
     copy_files_in_by_chunks
     delete_lock_file

@@ -103,7 +103,31 @@ synchro_time = 100 # seconds for a trivial file to propagate
   storage[:shared_drive_space_to_use].to_gig, storage[:client_count]
 
 @subject.cleanup_old_broken_runs # TODO other thread?/non blocking mode?
+
+# LODO just handle the waiting all here? yeah prolly
+@subject.prompt_before_uploading = proc {
+  got = :no
+  while got == :no
+    got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)}.join(', ')},\n would you like to do that now, or wait?", :yes => "Now, I'm ready!", :no => "wait")
+	if got == :no
+      sleep 10
+	end
+  end  
+}
   
 @t1 = Thread.new { loop { @subject.go_single_transfer_out } }
 
 @t2 = Thread.new { loop { @subject.go_single_transfer_in } }
+
+t3 = Thread.new { 
+  loop {
+    if !@t1.alive? || !@t2.alive?
+      if !@subject.shutdown
+	    show_message("thread died early?")
+	    shutdown
+	    break
+	  end
+    end
+    sleep 1
+  }
+}
