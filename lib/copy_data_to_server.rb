@@ -138,10 +138,10 @@ class IncomingCopier
     files_to_chunk = files_incoming(true).sort
     raise 'no files?' if files_to_chunk.empty?
     files_to_chunk.each{|f| 
-      file_size = File.size f
-      raise 'cannot fit that file ever [yet!]' if file_size > @dropbox_size
+      file_size = File.size f # work with a '0' for empty dirs, which is ok
+      raise 'cannot fit that file ever [yet!] ask for it!' if file_size > @dropbox_size
       if file_size + current_sum > @dropbox_size
-        out << current_group
+        out << [current_group, current_sum]
         current_group = [f]
         current_sum = file_size
       else
@@ -149,7 +149,7 @@ class IncomingCopier
         current_sum += file_size
       end
     }
-    out << current_group unless current_group.empty? # last group
+    out << [current_group, current_sum] unless current_group.empty? # last group
     out
   end
   
@@ -158,12 +158,15 @@ class IncomingCopier
   end
   
   def copy_chunk_to_dropbox chunk
-      for filename in chunk
+    for filename in chunk
       relative_extra_dir = filename[(renamed_being_transferred_dir.length + 1)..-1] # like "subdir/b"
       possibly_new_subdir = dropbox_temp_transfer_dir + '/' + File.dirname(relative_extra_dir)
-      FileUtils.mkdir_p possibly_new_subdir # sooo lazy, also, could we use FileUtils.cp_r here?
+      FileUtils.mkdir_p possibly_new_subdir # I guess we might be able to use some type of *args to FileUtils.cp_r here?
       if(File.file? filename)
+        # avoid jruby 7046 for large files...
         FileUtils.cp filename, possibly_new_subdir
+       # cmd = %!copy "#{filename}" "#{possibly_new_subdir}"!
+       # system(cmd) 
       else
         assert File.directory?(filename)        
         FileUtils.mkdir_p possibly_new_subdir + '/' + relative_extra_dir
@@ -172,11 +175,9 @@ class IncomingCopier
   end
   
   def copy_files_in_by_chunks
-    for chunk in split_to_chunks
-      size = 0
-      chunk.each{|f| size += File.size(f) }
+    for chunk, size in split_to_chunks
       copy_chunk_to_dropbox chunk
-        touch_the_you_can_go_for_it_file size
+      touch_the_you_can_go_for_it_file size
       wait_for_all_clients_to_copy_files_out
       File.delete previous_you_can_go_for_it_size_file
       FileUtils.rm_rf dropbox_temp_transfer_dir
