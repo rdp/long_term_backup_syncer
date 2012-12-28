@@ -64,7 +64,7 @@ class IncomingCopier
   
   def cleanup_old_broken_runs
     if File.directory?(renamed_being_transferred_dir)
-	  SimpleGuiCreator.show_message("warning, cleaning up from previous run? #{renamed_being_transferred_dir}")
+	  SimpleGuiCreator.show_message("warning, dirt dir #{renamed_being_transferred_dir} please cleanup first") # TODO prompt here
 	  FileUtils.rm_rf renamed_being_transferred_dir
 	end
   end  
