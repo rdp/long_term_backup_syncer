@@ -28,17 +28,17 @@ describe IncomingCopier do
   
   it 'should wait for data to stabilize' do
     a = File.open 'test_dir/a', 'w'
-	start_time = Time.now
-	stop_time = nil
-    t = Thread.new { @subject.wait_for_incoming_files_to_stabilize_and_rename_entire_dir; stop_time = Time.now}
-    while(Time.now - start_time < 0.5)
-      a.puts 'hello'
+    start_time = Time.now
+	t = time_in_other_thread {  @subject.wait_for_incoming_files_to_stabilize_and_rename_entire_dir}
+	# we want the file to keep being written to...
+    while(Time.now - start_time < 0.3)
+      a.puts 'hello' 
       a.flush
 	  sleep 0.01
     end	  
 	a.close
 	t.join
-	(stop_time - start_time).should be > 0.5
+	@thread_took.should be > 0.3
 	assert File.directory?('test_dir.being_transferred')
 	assert File.exist?('test_dir.being_transferred/a')
   end
@@ -55,13 +55,11 @@ describe IncomingCopier do
   
   it 'should back off if already locked' do
 	FileUtils.touch @competitor
-	start_time = Time.now
-	stop_time = nil
-    t = Thread.new { @subject.wait_if_already_has_lock_files; stop_time = Time.now }
-	sleep 0.5
+	t = time_in_other_thread { @subject.wait_if_already_has_lock_files }
+	sleep 0.3
 	File.delete @competitor
 	t.join
-	(stop_time - start_time).should be > 0.5	
+	@thread_took.should be > 0.3
   end
   
   it 'should back off if lock file contention' do
@@ -77,9 +75,8 @@ describe IncomingCopier do
   end
   
   it 'should retry when it detects contention' do
-	start_time = Time.now
-	stop_time = nil
-    t = Thread.new { @subject.obtain_lock; stop_time = Time.now }
+    start_time = Time.now
+    t = time_in_other_thread { @subject.obtain_lock }	
 	sleep 0.1
 	while(Time.now - start_time < 0.75)
   	  FileUtils.touch @competitor
@@ -88,7 +85,7 @@ describe IncomingCopier do
 	  sleep 0.1
 	end
 	t.join
-	(stop_time - start_time).should be > 0.75
+	@thread_took.should be > 0.75
   end
 
   it 'should split incoming data to transferrable chunks' do
@@ -181,8 +178,6 @@ describe IncomingCopier do
   end
   
   it 'should wait for clients to finish downloading it' do
-    start_time = Time.now
-	stop_time = nil
     @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 1000, 2
     t = time_in_other_thread { @subject.wait_for_all_clients_to_copy_files_out}
     FileUtils.touch @subject.track_when_client_done_dir + '/a'
