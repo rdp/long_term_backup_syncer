@@ -47,7 +47,7 @@ describe IncomingCopier do
   end
   
   def its_lock_file
-     "dropbox_root_dir/synchronization/request_#{Process.pid}.lock"
+    @subject.this_process_lock_file
   end
   
   it 'should create a lock file' do
@@ -153,7 +153,7 @@ describe IncomingCopier do
     FileUtils.mkdir_p "dropbox_root_dir/temp_transfer/subdir"
     File.write 'dropbox_root_dir/temp_transfer/a', '_'
 	File.write 'dropbox_root_dir/temp_transfer/subdir/b', '_' * 1000  
-	Dir.mkdir 'dropbox_root_dir/temp_transfer/subdir/subdir2' # an empty dir :)
+	Dir.mkdir 'dropbox_root_dir/temp_transfer/subdir2' # an empty dir :)
   end
 
   it 'should do a complete multi-chunk transfer' do
@@ -246,7 +246,7 @@ describe IncomingCopier do
  	  @subject.copy_files_from_dropbox_to_local_permanent_storage
 	  assert File.exist?('longterm_storage/a')  
 	  assert File.exist?('longterm_storage/subdir/b')
-	  #assert File.directory?('longterm_storage/subdir2')
+	  assert File.directory?('longterm_storage/subdir2')
 	end
 	
 	it 'should create its done file' do
