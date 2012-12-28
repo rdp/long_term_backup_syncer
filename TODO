@@ -14,6 +14,8 @@ pick a new name
   
 = someday =
 
+warn on too many files "you should really be zipping this, buddy!"
+
 "daemonize" mode vs. setup
   
 maybe a "go" button when syncing up?  or a prompt at least
