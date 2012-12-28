@@ -157,21 +157,25 @@ class IncomingCopier
     @local_drop_here_to_save_dir + '.being_transferred'
   end
   
-  def copy_chunk_to_dropbox chunk
-    for filename in chunk
-      relative_extra_dir = filename[(renamed_being_transferred_dir.length + 1)..-1] # like "subdir/b"
-      possibly_new_subdir = dropbox_temp_transfer_dir + '/' + File.dirname(relative_extra_dir)
+  def copy_all_files_over files, relative_to_strip_from_files, to_this_dir  
+    for filename in files
+      relative_extra_dir = filename[(relative_to_strip_from_files.length + 1)..-1] # like "subdir/b"
+      possibly_new_subdir = to_this_dir + '/' + File.dirname(relative_extra_dir)
       FileUtils.mkdir_p possibly_new_subdir # I guess we might be able to use some type of *args to FileUtils.cp_r here?
       if(File.file? filename)
         # avoid jruby 7046 for large files...
-        FileUtils.cp filename, possibly_new_subdir
-       # cmd = %!copy "#{filename}" "#{possibly_new_subdir}"!
-       # system(cmd) 
+        # FileUtils.cp filename, possibly_new_subdir
+        cmd = %!copy "#{filename.gsub('/', "\\")}" "#{possibly_new_subdir.gsub('/', "\\")}" > NUL 2>&1!
+        assert system(cmd)        
       else
         assert File.directory?(filename)        
         FileUtils.mkdir_p possibly_new_subdir + '/' + relative_extra_dir
       end
     end
+  end
+  
+  def copy_chunk_to_dropbox chunk
+    copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir
   end
   
   def copy_files_in_by_chunks

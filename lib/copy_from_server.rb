@@ -40,7 +40,8 @@ class IncomingCopier
   end  
   
   def copy_files_from_dropbox_to_local_permanent_storage
-    FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir    
+    # FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir # jruby bug
+    copy_all_files_over Dir[dropbox_temp_transfer_dir + '/**/*'], dropbox_temp_transfer_dir, @longterm_storage_dir    
   end
   
   def create_done_copying_files_to_local_file
