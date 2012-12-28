@@ -4,8 +4,6 @@ test it between 2 computers at work
   
 = maybe =
 
-don't wait and loop, just prompt for the upload...
-
 = someday =
 
 prompt to cleanup old transfer
@@ -27,14 +25,13 @@ combine the google drive folders into subfolders
 
 warn on too many files "you should really be zipping this, buddy!"
 
-"daemonize" mode vs. setup
+"daemonize" mode icon vs. setup
   
-
 cleanup shutdown code it raises an exception?
 
 better folders, don't re-mkdir them if they don't exist
 
-prompt for "google drive ok?" for init
+prompt for "google drive found ok?" for init
 
 gui show status updates, also warn when one client appears to be lagging
 
@@ -53,9 +50,7 @@ it should have one way of allowing "public sync" (like anonymous?)
 
 use some type of system binding to "be notified" when new files appear
 
-is it too taxing to sum the file sizes as they're coming in?
-
-warn if it appears it will plow something
+warn if it appears it will eventually plow something
 
 use registry to "auto determine" your gdrive home, etc.
 

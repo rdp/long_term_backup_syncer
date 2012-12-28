@@ -69,21 +69,13 @@ class IncomingCopier
 	end
   end  
   
-  def wait_for_incoming_files_to_stabilize_and_rename_entire_dir
-    old_size = -1
-    current_size = size_incoming_files
-    while(current_size != old_size) 
-      old_size = current_size
-      sleep!('wait_for_incoming_files_to_stabilize_and_rename_entire_dir', @sleep_time*6)
-      current_size = size_incoming_files
-    end
+  def wait_for_incoming_files_to_stabilize_and_rename_entire_dir  
 	if @prompt_before_uploading
 	  @prompt_before_uploading.call
-	end
-	
-    assert !File.directory?(renamed_being_transferred_dir) # should have been cleaned up...
+	end	
+    assert !File.directory?(renamed_being_transferred_dir) # should have been cleaned up already [!]...
     FileUtils.mv @local_drop_here_to_save_dir, renamed_being_transferred_dir
-    Dir.mkdir @local_drop_here_to_save_dir
+    Dir.mkdir @local_drop_here_to_save_dir # recreate it
   end
   
   def this_process_lock_file

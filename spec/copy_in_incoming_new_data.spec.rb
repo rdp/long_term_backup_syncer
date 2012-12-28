@@ -31,19 +31,14 @@ describe IncomingCopier do
     @thread_took.should be > 0.3
   end
   
-  it 'should wait for data to stabilize' do
-    a = File.open 'test_dir/a', 'w'
-    start_time = Time.now
-    t = time_in_other_thread {  @subject.wait_for_incoming_files_to_stabilize_and_rename_entire_dir}
-    # we want the file to keep being written to...
-    while(Time.now - start_time < 0.3)
-      a.puts 'hello' 
-      a.flush
-      sleep 0.01
-    end      
-    a.close
-    t.join
-    @thread_took.should be > 0.3
+  it 'should rename dir' do
+    File.write 'test_dir/a', 'some stuff'
+	got_it = false
+	@subject.prompt_before_uploading = proc {
+	  got_it = true
+	}
+    @subject.wait_for_incoming_files_to_stabilize_and_rename_entire_dir
+	assert got_it
     assert File.directory?('test_dir.being_transferred')
     assert File.exist?('test_dir.being_transferred/a')
   end
