@@ -1,25 +1,24 @@
 = Yes do =
 
-GUI 
-  everything else
-  save config as local file, done
-
 test it between 2 computers at work
   
 = maybe =
 
-it should capture to 2 places, same computer
-
-innosetup
-  "daemonize" mode vs. setup
+it should be able to capture to 2 places, same computer
   
+innosetup
+
 pick a new name
   "fake real" website
   distributable
   
 = someday =
 
-cleanup shutdown code
+"daemonize" mode vs. setup
+  
+maybe a "go" button when syncing up?  or a prompt at least
+
+cleanup shutdown code it raises an exception?
 
 better folders, don't re-mkdir them if they don't exist
 

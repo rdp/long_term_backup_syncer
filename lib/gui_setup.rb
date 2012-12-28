@@ -101,6 +101,8 @@ synchro_time = 100 # seconds for a trivial file to propagate
 
 @subject = IncomingCopier.new storage[:drop_into_folder], storage[:root_drive], storage[:longterm_storage_local_dir], poll_time, synchro_time, 
   storage[:shared_drive_space_to_use].to_gig, storage[:client_count]
+
+@subject.cleanup_old_broken_runs # TODO other thread?/non blocking mode?
   
 @t1 = Thread.new { loop { @subject.go_single_transfer_out } }
 

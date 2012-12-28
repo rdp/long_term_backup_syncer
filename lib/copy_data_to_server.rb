@@ -59,6 +59,13 @@ class IncomingCopier
     sum = 0; files_incoming.each{|f| sum += File.size f}; sum  
   end
   
+  def cleanup_old_broken_runs
+    if File.directory?(renamed_being_transferred_dir)
+	  SimpleGuiCreator.show_message("warning, cleaning up from previous run? #{renamed_being_transferred_dir}")
+	  FileUtils.rm_rf renamed_being_transferred_dir
+	end
+  end
+  
   def wait_for_incoming_files_to_stabilize_and_rename_entire_dir
     old_size = -1
     current_size = size_incoming_files
