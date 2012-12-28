@@ -82,6 +82,7 @@ class IncomingCopier
   end
   
   def next_you_can_go_for_it_after_size_file(current_chunk_size)
+    # use filename instead of size, to make it synchronously created with its contents :)
     @previous_go_for_it_filename = "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}_#{@transfer_count += 1}_#{current_chunk_size}"
   end
   
@@ -157,12 +158,17 @@ class IncomingCopier
     @local_drop_here_to_save_dir + '.being_transferred'
   end
   
-  def copy_chunk_in chunk
+  def copy_chunk_to_dropbox chunk
   	for filename in chunk
 	  relative_extra_dir = filename[(renamed_being_transferred_dir.length + 1)..-1] # like "subdir/b"
 	  possibly_new_subdir = dropbox_temp_transfer_dir + '/' + File.dirname(relative_extra_dir)
 	  FileUtils.mkdir_p possibly_new_subdir # sooo lazy, also, could we use FileUtils.cp_r here?
-	  FileUtils.cp filename, possibly_new_subdir
+	  if(File.file? filename)
+	    FileUtils.cp filename, possibly_new_subdir
+	  else
+	    assert File.directory?(filename)		
+		FileUtils.mkdir_p possibly_new_subdir + '/' + relative_extra_dir
+	  end
 	end
   end
   
@@ -170,7 +176,7 @@ class IncomingCopier
     for chunk in split_to_chunks
 	  size = 0
 	  chunk.each{|f| size += File.size(f) }
-	  copy_chunk_in chunk
+	  copy_chunk_to_dropbox chunk
   	  touch_the_you_can_go_for_it_file size
 	  wait_for_all_clients_to_copy_files_out
 	  File.delete previous_you_can_go_for_it_size_file

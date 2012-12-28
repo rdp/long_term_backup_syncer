@@ -1,21 +1,19 @@
 = Yes do =
 
-surely it doesn't sleep till they're done?
-  use the client done touch files more/better
+GUI adjust option "there will be this many clients total"
+  GUI local dropbox repo root
+  everything else
+  save local file, done
 
-at least a "file sum" in the you can go for it...
-
-GUI adjust option "this many clients total"
-  GUI local dropbox repo. possibly in a YAML file...
-
-it should be able to transfer single files
-
-it should transfer empty directories
+test it between 2 computers at work
   
 = maybe =
 
-innosetup
+it should transfer empty directories
 
+innosetup
+  "daemonize" mode vs. setup
+  
 auto 7zip
   any single files
   optionally if they just have non jpg?

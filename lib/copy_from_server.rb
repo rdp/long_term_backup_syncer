@@ -13,7 +13,24 @@ class IncomingCopier
 	@current_transfer_file = files[0]	
   end
   
-  def copy_current_files_to_local_permanent_storage
+  def wait_for_the_data_to_all_get_here
+    @current_transfer_file =~ /.*_(\d+)/
+    length_expected = $1.to_i
+	while(file_size_incoming < length_expected)
+	  sleep!('d')
+	end
+	#assert file_size_incoming == length_expected
+  end
+  
+  def file_size_incoming
+    length = 0
+    Dir[dropbox_temp_transfer_dir + '/**/*'].each{|f|
+	  length += File.size(f)
+	}
+	length
+  end  
+  
+  def copy_files_from_dropbox_to_local_permanent_storage
     FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir	
   end
   
@@ -22,7 +39,7 @@ class IncomingCopier
   end
   
   def wait_till_current_transfer_is_over
-    # server might be too fast for us...maybe
+    # server might be too fast for us...and delete it before we reach here, possibly
 	# assert File.exist? @current_transfer_file
     while File.exist? @current_transfer_file
 	  sleep!('w')
@@ -32,7 +49,8 @@ class IncomingCopier
   # the only one you should have to call...
   def go_single_transfer_in
     wait_for_transfer_file_come_up
-	copy_current_files_to_local_permanent_storage
+	wait_for_the_data_to_all_get_here
+	copy_files_from_dropbox_to_local_permanent_storage
 	create_done_copying_files_to_local_file
 	wait_till_current_transfer_is_over
   end

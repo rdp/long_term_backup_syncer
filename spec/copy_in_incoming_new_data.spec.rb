@@ -5,12 +5,15 @@ require '../lib/copy_data_to_server.rb'
 require 'fileutils'
 
 describe IncomingCopier do
+
   before do
 	FileUtils.rm_rf 'test_dir'
 	Dir.mkdir 'test_dir'
 	FileUtils.rm_rf 'test_dir.being_transferred'
 	FileUtils.rm_rf 'dropbox_root_dir'
+	FileUtils.rm_rf 'longterm_storage'
 	Dir.mkdir 'dropbox_root_dir'
+	Dir.mkdir 'longterm_storage'
     @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 0, 1000, 1
     @competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
   end
@@ -46,6 +49,7 @@ describe IncomingCopier do
   def its_lock_file
      "dropbox_root_dir/synchronization/request_#{Process.pid}.lock"
   end
+  
   it 'should create a lock file' do
 	assert !File.exist?(its_lock_file)
     @subject.create_lock_file
@@ -117,47 +121,60 @@ describe IncomingCopier do
   
   it 'should copy files in' do
     test_dir = File.expand_path '/tmp/test_dir.being_transferred'
-	begin
-	Dir.mkdir test_dir
-    subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 'longterm', 0.1, 0.5, 0, 1000, 2
-	FileUtils.mkdir_p test_dir + '/subdir'
-    File.write test_dir + '/a', '_'
-    File.write test_dir + '/subdir/b', '_'
-	subject.create_lock_file
-	t = Thread.new {subject.copy_chunk_in [test_dir + '/a', test_dir + '/subdir/b']}
-	sleep 0.2
-	create_block_done_files	
-	t.join
-	assert File.exist? "dropbox_root_dir/temp_transfer/a"
-	assert File.exist? "dropbox_root_dir/temp_transfer/subdir/b"
+    begin
+	  Dir.mkdir test_dir
+      subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 'longterm', 0.1, 0.5, 0, 1000, 2
+	  FileUtils.mkdir_p test_dir + '/subdir'
+      FileUtils.mkdir_p test_dir + '/subdir2'
+      File.write test_dir + '/a', '_'
+      File.write test_dir + '/subdir/b', '_'
+	  subject.create_lock_file
+	  assert !File.exist?("dropbox_root_dir/temp_transfer/a")
+	  t = Thread.new { subject.copy_chunk_to_dropbox [test_dir + '/a', test_dir + '/subdir/b', test_dir + '/subdir2'] }
+	  sleep 0.2
+	  create_block_done_files	
+	  t.join
+	  assert File.exist? "dropbox_root_dir/temp_transfer/a"
+	  assert File.exist? "dropbox_root_dir/temp_transfer/subdir/b"
+	  assert File.directory? "dropbox_root_dir/temp_transfer/subdir2" # empty dir
 	ensure
-    FileUtils.rm_rf test_dir
+      FileUtils.rm_rf test_dir
 	end	
   end
   
-  def create_a_few_files_in_dropbox
+  def create_a_few_files_in_to_transfer_dir
     File.write 'test_dir/a', '_'
 	Dir.mkdir 'test_dir/subdir'
 	File.write 'test_dir/subdir/b', '_' * 1000  
+	Dir.mkdir 'test_dir/subdir2' # an empty dir :)
   end
   
+  def create_a_few_files_in_dropbox_dir
+    FileUtils.mkdir_p "dropbox_root_dir/temp_transfer/subdir"
+    File.write 'dropbox_root_dir/temp_transfer/a', '_'
+	File.write 'dropbox_root_dir/temp_transfer/subdir/b', '_' * 1000  
+	Dir.mkdir 'dropbox_root_dir/temp_transfer/subdir/subdir2' # an empty dir :)
+  end
+
   it 'should do a complete multi-chunk transfer' do
-    create_a_few_files_in_dropbox
+    create_a_few_files_in_to_transfer_dir
 	t = Thread.new { @subject.go_single_transfer_out }	
 	while !@subject.previous_you_can_go_for_it_size_file
+	  # still getting the file...
 	  sleep 0.1
 	end
+	# 2 chunks
 	2.times {
 	  while !File.exist?(@subject.previous_you_can_go_for_it_size_file) # takes quite awhile [LODO check...]
 	    sleep 0.1
 	  end
 	  create_block_done_files
-	  sleep 0.2 # let it delete them
+	  sleep 0.2 # let it delete block done files, copy in more data
 	}
 	t.join
 	assert !File.exist?(@subject.track_when_client_done_dir + '/a') # old client done file
 	
-	Dir['dropbox_root_dir/temp_transfer/*'].length.should == 0 # cleaned up drop box
+	Dir['dropbox_root_dir/temp_transfer/*'].length.should == 0 # cleaned up drop box after successful transfer
 	assert !File.exist?(its_lock_file)
 	assert !File.exist?(@subject.previous_you_can_go_for_it_size_file)
 	assert !File.exist?('test_dir/a')
@@ -203,13 +220,33 @@ describe IncomingCopier do
 	  @thread_took.should be > 0.3
 	end
 	
-    it 'should copy the files over' do
- 	  File.write "dropbox_root_dir/temp_transfer/a", '_'
-	  FileUtils.mkdir "dropbox_root_dir/temp_transfer/subdir"
- 	  File.write "dropbox_root_dir/temp_transfer/subdir/b", '_'
-	  @subject.copy_current_files_to_local_permanent_storage
+	it 'should wait till enough file bytes appear before performing copy' do
+	  FileUtils.touch @subject.next_you_can_go_for_it_after_size_file(767)
+	  @subject.wait_for_transfer_file_come_up # notice it
+	  t = time_in_other_thread { @subject.wait_for_the_data_to_all_get_here }
+	  sleep 0.1
+ 	  File.write "dropbox_root_dir/temp_transfer/a", '_' * 766
+	  sleep 0.2
+ 	  File.write "dropbox_root_dir/temp_transfer/b", '_' * 1
+	  t.join
+	  @thread_took.should be > 0.3	
+	end
+	
+	it 'should bail if you transfer too much' do
+	  FileUtils.touch @subject.next_you_can_go_for_it_after_size_file(767)
+	  @subject.wait_for_transfer_file_come_up # notice it
+	  sleep 0.1 # let it sleep
+ 	  File.write "dropbox_root_dir/temp_transfer/a", '_' * 786
+	  #proc { @subject.wait_for_the_data_to_all_get_here }.should raise_exception(/no files/) # TODO uncomment	
+	end
+	
+    it 'should copy the files over from dropbox to local storage' do	  
+	  create_a_few_files_in_dropbox_dir
+	  assert !File.exist?('longterm_storage/a')
+ 	  @subject.copy_files_from_dropbox_to_local_permanent_storage
 	  assert File.exist?('longterm_storage/a')  
 	  assert File.exist?('longterm_storage/subdir/b')
+	  #assert File.directory?('longterm_storage/subdir2')
 	end
 	
 	it 'should create its done file' do
@@ -230,13 +267,15 @@ describe IncomingCopier do
 	end
 	
 	it 'should do full client receive loop' do
-	  create_a_few_files_in_dropbox
+	  create_a_few_files_in_to_transfer_dir
+	  assert !File.exist?(@subject.longterm_storage_dir + '/a') # sanity check test
       t = Thread.new { @subject.go_single_transfer_out }
 	  @subject.go_single_transfer_in
 	  @subject.go_single_transfer_in
 	  t.join
-	  assert File.exist?(@subject.longterm_storage_dir + '/a')
-	  assert File.exist?(@subject.longterm_storage_dir + '/subdir/b')
+	  assert File.exist?(@subject.longterm_storage_dir + '/a') # single root file
+	  assert File.exist?(@subject.longterm_storage_dir + '/subdir/b') # subdir with file
+	  assert File.directory?(@subject.longterm_storage_dir + '/subdir2') # empty dir -- let it fail for now :)
 	end
 
   end
