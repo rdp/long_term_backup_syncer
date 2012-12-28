@@ -37,7 +37,7 @@ class IncomingCopier
   
   def sleep!(output_char, sleep_time=@sleep_time)
     sleep sleep_time
-    print output_char
+    print output_char, ' '
   end
   
   def files_incoming(use_temp_renamed_local_dir = false)
@@ -65,7 +65,7 @@ class IncomingCopier
   def cleanup_old_broken_runs
     if File.directory?(renamed_being_transferred_dir)
 	  SimpleGuiCreator.show_message("warning, dirt dir #{renamed_being_transferred_dir} please cleanup first") # TODO prompt here
-	  FileUtils.rm_rf renamed_being_transferred_dir
+	  SimpleGuiCreator.reveal_in_explorer renamed_being_transferred_dir
 	end
   end  
   
@@ -87,7 +87,7 @@ class IncomingCopier
   end
   
   def this_process_lock_file
-    "#{@dropbox_root_local_dir}/synchronization/request_#{Process.pid}.lock"
+    "#{@dropbox_root_local_dir}/synchronization/request_#{Socket.gethostname}_#{Process.pid}.lock"
   end
   
   def previous_you_can_go_for_it_size_file
@@ -96,7 +96,7 @@ class IncomingCopier
   
   def next_you_can_go_for_it_after_size_file(current_chunk_size)
     # use filename instead of size, to make it synchronously created with its contents :)
-    @previous_go_for_it_filename = "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Process.pid}_#{@transfer_count += 1}_#{current_chunk_size}"
+    @previous_go_for_it_filename = "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Socket.gethostname}_#{Process.pid}_#{@transfer_count += 1}_#{current_chunk_size}"
   end
   
   def touch_the_you_can_go_for_it_file current_chunk_size
@@ -109,7 +109,7 @@ class IncomingCopier
   def wait_if_already_has_lock_files
     raise 'locking confusion?' if File.exist? this_process_lock_file
     while Dir[lock_dir + '/*'].length > 0
-      sleep!('wait_if_already_has_lock_files')
+      sleep!('wait_if_already_has_lock_files' + Dir[lock_dir + '/*'].join(' '))
     end
   end
   
