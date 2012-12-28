@@ -8,3 +8,5 @@
     "(Rremember to pre-zip folders (and videos too) for now, if you desire to save disk space)"
 
     [Re-configure!:re_configure]
+    [Minimize to tray:minimize_to_tray] "Does nothing yet"
+    [Shutdown:shutdown]

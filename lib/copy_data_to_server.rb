@@ -49,6 +49,9 @@ class IncomingCopier
   def wait_for_any_files_to_appear
     while files_incoming.length == 0
       sleep!(',')
+  	  if @shutdown
+        raise 'shutting down'
+      end
     end
   end
 

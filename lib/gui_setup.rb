@@ -33,10 +33,10 @@ end
 def re_configure
   message = "Pick directory that is the root of your shared drive, like your_username/Google Drive or the like:"  
   show_message message unless storage[:root_drive]
-  dir = new_existing_dir_chooser_and_go message, File.expand_path('~')
+  dir = new_existing_dir_chooser_and_go message, storage[:root_drive] || File.expand_path('~')
   storage[:root_drive] = dir
   storage[:client_count] = get_input("how many total end storage places will there be?", 2).to_i
-  storage[:shared_drive_space_to_use] = get_input("How much shared drive to use for transfers (in GB)", 2.5).to_f
+  storage[:shared_drive_space_to_use] = get_input("How much shared drive to use for transfers (in GB)", storage[:shared_drive_space_to_use] || 2.5).to_f
   transfer_dir = File.expand_path('~/backup_synchronizer_drop_files_here')
   FileUtils.mkdir_p(transfer_dir)
   storage[:drop_into_folder] = new_existing_dir_chooser_and_go("Pick directory where you can drop files in to have them transferred", storage[:drop_into_folder] || transfer_dir)
@@ -59,20 +59,29 @@ end
 
 a.elements[:re_configure].on_clicked {
   re_configure
-  show_message "ok, restarting app now, hope you weren't in the middle of a transfer..."
-  hard_exit!
+  show_message "ok, shutting down app now, then restart it..."
+  shutdown
 }
 
 a.elements[:open_drop_into_folder].on_clicked {
   SimpleGuiCreator.show_in_explorer(storage[:drop_into_folder])
 }
 
+a.elements[:shutdown].on_clicked {
+  shutdown
+}
+
 a.after_closed {
+  shutdown # just in case
+  # LODO warn if they hit the 'X'?
+}
+
+def shutdown
   a.elements[:status].text = "shutting down..."
-  @subject.shut_down
+  @subject.shutdown!
   @t1.join  
   @t2.join
-}
+end
 
 setup_ui # init...
 
