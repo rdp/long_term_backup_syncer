@@ -6,13 +6,12 @@ require 'fileutils'
 class IncomingCopier
 
   def initialize local_drop_here_to_save_dir, dropbox_root_local_dir, longterm_storage_dir, sleep_time, synchro_time, 
-        sleep_time_to_let_it_get_to_server, dropbox_size, total_client_size
+        dropbox_size, total_client_size
     @local_drop_here_to_save_dir = File.expand_path local_drop_here_to_save_dir
 	@sleep_time = sleep_time
 	@dropbox_root_local_dir = File.expand_path dropbox_root_local_dir
 	@synchro_time = synchro_time
 	@dropbox_size = dropbox_size
-	@sleep_time_to_let_it_get_to_server = sleep_time_to_let_it_get_to_server
 	@total_client_size = total_client_size
 	@longterm_storage_dir = longterm_storage_dir
     FileUtils.mkdir_p lock_dir

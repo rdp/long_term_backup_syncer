@@ -14,7 +14,7 @@ describe IncomingCopier do
 	FileUtils.rm_rf 'longterm_storage'
 	Dir.mkdir 'dropbox_root_dir'
 	Dir.mkdir 'longterm_storage'
-    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 0, 1000, 1
+    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 1000, 1
     @competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
   end
 
@@ -123,7 +123,7 @@ describe IncomingCopier do
     test_dir = File.expand_path '/tmp/test_dir.being_transferred'
     begin
 	  Dir.mkdir test_dir
-      subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 'longterm', 0.1, 0.5, 0, 1000, 2
+      subject = IncomingCopier.new '/tmp/test_dir', 'dropbox_root_dir', 'longterm', 0.1, 0.5, 1000, 2
 	  FileUtils.mkdir_p test_dir + '/subdir'
       FileUtils.mkdir_p test_dir + '/subdir2'
       File.write test_dir + '/a', '_'
@@ -186,7 +186,7 @@ describe IncomingCopier do
   it 'should wait for clients to finish downloading it' do
     start_time = Time.now
 	stop_time = nil
-    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 0, 1000, 2
+    @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 1000, 2
     t = time_in_other_thread { @subject.wait_for_all_clients_to_copy_files_out}
     FileUtils.touch @subject.track_when_client_done_dir + '/a'
 	sleep 0.5
