@@ -29,8 +29,7 @@ auto 7zip
   optionally if they just have non jpg?
   what's the best compression method here?
 
-it should transfer empty directories
-  and warn? :)
+it should warn on transfer empty directories?
 
 it should capture names of each capture point, make them editable, share the sum number, etc.
 

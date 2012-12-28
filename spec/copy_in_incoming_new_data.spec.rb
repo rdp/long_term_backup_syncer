@@ -152,22 +152,25 @@ describe IncomingCopier do
 
   it 'should do a complete multi-chunk transfer' do
     create_a_few_files_in_to_transfer_dir
+	assert !File.directory?('dropbox_root_dir/temp_transfer/subdir2')
+
 	t = Thread.new { @subject.go_single_transfer_out }	
-	while !@subject.previous_you_can_go_for_it_size_file
-	  # still getting the file...
-	  sleep 0.1
-	end
 	# 2 chunks
-	2.times {
-	  while !File.exist?(@subject.previous_you_can_go_for_it_size_file) # takes quite awhile [LODO check...]
-	    sleep 0.1
-	  end
-	  create_block_done_files
-	  sleep 0.2 # let it delete block done files, copy in more data
-	}
+    while !File.exist?(@subject.previous_you_can_go_for_it_size_file) # takes quite awhile [LODO check why?...]
+	  sleep 0.01
+	end
+	# "sure we got 'em them"
+	create_block_done_files
+	sleep 0.2 # let it delete block done files, copy in more data LODO check takes this long?
+	while !File.exist?(@subject.previous_you_can_go_for_it_size_file) # takes quite awhile [LODO check why?...]
+	  sleep 0.01
+	end
+	assert File.directory?('dropbox_root_dir/temp_transfer/subdir2')
+	# "sure we got 'em them"
+	create_block_done_files
 	t.join
-	assert !File.exist?(@subject.track_when_client_done_dir + '/a') # old client done file
 	
+	assert @subject.client_done_copying_files.length == 0 # it should clean up old client done files
 	Dir['dropbox_root_dir/temp_transfer/*'].length.should == 0 # cleaned up drop box after successful transfer
 	assert !File.exist?(its_lock_file)
 	assert !File.exist?(@subject.previous_you_can_go_for_it_size_file)

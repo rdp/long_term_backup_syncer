@@ -46,7 +46,7 @@ class IncomingCopier
 	else
 	  dir = @local_drop_here_to_save_dir
 	end
-    Dir[dir + '/**/*'].reject{|f| File.directory? f} # don't care about empty directories [?] TODO care :)
+    Dir[dir + '/**/*']
   end
 
   def wait_for_any_files_to_appear
@@ -77,7 +77,7 @@ class IncomingCopier
   end
   
   def previous_you_can_go_for_it_size_file
-    @previous_go_for_it_filename
+    @previous_go_for_it_filename || 'fake for unit tests'
   end
   
   def next_you_can_go_for_it_after_size_file(current_chunk_size)
