@@ -13,7 +13,7 @@ class IncomingCopier
 
   def wait_for_transfer_file_come_up
     while (files = current_transfer_ready_files).length == 0
-      sleep!('c')
+      sleep!('wait_for_transfer_file_come_up')
       if @shutdown
         raise 'shutting down' # should be safe here...
       end
@@ -26,7 +26,7 @@ class IncomingCopier
     @current_transfer_file =~ /.*_(\d+)/
     length_expected = $1.to_i
     while(file_size_incoming < length_expected)
-      sleep!('d')
+      sleep!('wait_for_the_data_to_all_get_here')
     end
     assert file_size_incoming == length_expected # not greater than it yikes!
   end
@@ -52,7 +52,7 @@ class IncomingCopier
     # server might be too fast for us...and delete it before we reach here, possibly
     # assert File.exist? @current_transfer_file
     while File.exist? @current_transfer_file
-      sleep!('w')
+      sleep!('wait_till_current_transfer_is_over')
     end
   end
   

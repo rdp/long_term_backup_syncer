@@ -51,7 +51,7 @@ class IncomingCopier
 
   def wait_for_any_files_to_appear
     while files_incoming.length == 0
-      sleep!(',')
+      sleep!('wait_for_any_files_to_appear')
   	  if @shutdown
         raise 'shutting down'
       end
@@ -74,7 +74,7 @@ class IncomingCopier
     current_size = size_incoming_files
     while(current_size != old_size) 
       old_size = current_size
-      sleep!('-')
+      sleep!('wait_for_incoming_files_to_stabilize_and_rename_entire_dir')
       current_size = size_incoming_files
     end
 	if @prompt_before_uploading
@@ -107,9 +107,9 @@ class IncomingCopier
   end
   
   def wait_if_already_has_lock_files
-    raise 'locking confusion detected' if File.exist? this_process_lock_file
+    raise 'locking confusion?' if File.exist? this_process_lock_file
     while Dir[lock_dir + '/*'].length > 0
-      sleep!('l')
+      sleep!('wait_if_already_has_lock_files')
     end
   end
   
@@ -129,7 +129,7 @@ class IncomingCopier
         delete_lock_file
         return false
       else
-        sleep!('l-')
+        sleep!('wait_for_lock_files_to_stabilize')
       end
     end
     true
@@ -213,7 +213,7 @@ class IncomingCopier
   
   def wait_for_all_clients_to_copy_files_out
     while client_done_copying_files.length != @total_client_size
-      sleep!('z')
+      sleep!('wait_for_all_clients_to_copy_files_out')
     end
     for file in client_done_copying_files
       File.delete file
