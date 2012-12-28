@@ -6,7 +6,7 @@ class IncomingCopier
   end
   
   @shutdown = false
-  
+  attr_accessor :shutdown
   def shutdown!
     @shutdown = true
   end

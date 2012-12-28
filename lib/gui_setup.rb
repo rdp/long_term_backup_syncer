@@ -37,7 +37,7 @@ def re_configure
   storage[:root_drive] = dir
   storage[:client_count] = get_input("how many total end storage places will there be?", 2).to_i
   storage[:shared_drive_space_to_use] = get_input("How much shared drive to use for transfers (in GB)", storage[:shared_drive_space_to_use] || 2.5).to_f
-  transfer_dir = File.expand_path('~/backup_synchronizer_drop_files_here')
+  transfer_dir = File.expand_path('~/backup_synchronizer_drop_files_here_they_will_be_copied_out_then_deleted')
   FileUtils.mkdir_p(transfer_dir)
   storage[:drop_into_folder] = new_existing_dir_chooser_and_go("Pick directory where you can drop files in to have them transferred", storage[:drop_into_folder] || transfer_dir)
   long_term_dir = File.expand_path('~/long_term_local_backup_copy')
@@ -78,9 +78,14 @@ a.after_closed {
 
 def shutdown
   a.elements[:status].text = "shutting down..."
-  @subject.shutdown!
-  @t1.join  
-  @t2.join
+  unless @subject.shutdown
+    @subject.shutdown! 
+    Thread.new {
+      @t1.join  
+      @t2.join
+      a.close!
+    }
+  end 
 end
 
 setup_ui # init...
@@ -91,7 +96,7 @@ class Numeric
   end
 end
 
-poll_time = 10
+poll_time = 3
 synchro_time = 100 # seconds for a trivial file to propagate
 
 @subject = IncomingCopier.new storage[:drop_into_folder], storage[:root_drive], storage[:longterm_storage_local_dir], poll_time, synchro_time, 

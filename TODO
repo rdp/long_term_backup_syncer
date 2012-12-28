@@ -19,6 +19,8 @@ pick a new name
   
 = someday =
 
+cleanup shutdown code
+
 better folders, don't re-mkdir them if they don't exist
 
 prompt for "google drive ok?" for init
