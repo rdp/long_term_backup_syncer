@@ -25,6 +25,10 @@ pick a new name
   
 = someday =
 
+use some type of system binding to "be notified" when new files appear
+
+is it too taxing to sum the file sizes as they're coming in?
+
 warn if it appears it will plow something
 
 use registry to "auto determine" your gdrive home, etc.
