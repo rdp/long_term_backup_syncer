@@ -3,27 +3,38 @@
 GUI adjust option "there will be this many clients total"
   GUI local dropbox repo root
   everything else
-  save local file, done
+  save config as local file, done
 
 test it between 2 computers at work
   
 = maybe =
 
-it should transfer empty directories
+it should capture to 2 places, same computer
 
 innosetup
   "daemonize" mode vs. setup
   
-auto 7zip
-  any single files
-  optionally if they just have non jpg?
-  what's the best compression method here?
-
 pick a new name
   "fake real" website
   distributable
   
 = someday =
+
+gui show status updates, also warn when one client appears to be lagging
+
+work with disconnected storage somehow...
+
+auto 7zip
+  any single files
+  optionally if they just have non jpg?
+  what's the best compression method here?
+
+it should transfer empty directories
+  and warn? :)
+
+it should capture names of each capture point, make them editable, share the sum number, etc.
+
+it should have one way of allowing "public sync" (like anonymous?)
 
 use some type of system binding to "be notified" when new files appear
 
