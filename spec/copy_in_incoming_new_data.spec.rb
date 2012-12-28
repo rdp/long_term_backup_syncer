@@ -1,7 +1,12 @@
-require 'rubygems'
-require 'sane'
+require 'rubygems' # rspec
 require 'rspec/autorun'
-require '../lib/copy_data_to_server.rb'
+$: << File.dirname(__FILE__) + "/../lib"
+# gems
+for dir in Dir[File.dirname(__FILE__) + "/../vendor/**/lib"]
+  $: << dir
+end
+require 'sane'
+require 'copy_data_to_server.rb'
 require 'fileutils'
 
 describe IncomingCopier do
