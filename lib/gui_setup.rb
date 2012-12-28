@@ -1,16 +1,31 @@
+require File.dirname(__FILE__) + "/copy_data_to_server.rb"
 $: << File.dirname(__FILE__) + "/../vendor/simple_gui_creator/lib"
 require 'simple_gui_creator'
+
 include SimpleGuiCreator
+extend SimpleGuiCreator
 
 @storage = Storage.new('backup_syncher')
+@storage.clear!
 def storage
   @storage
 end
 
 @a = ParseTemplate.new.parse_setup_filename('lib\\setup.sgc')
 
+def a
+  @a
+end
+
+def show_message message
+  SimpleGuiCreator.show_message message
+end
+
+def new_existing_dir_chooser_and_go *args
+  SimpleGuiCreator.new_existing_dir_chooser_and_go *args
+end
+
 def re_configure
-  re_configure
   message = "Pick directory that is the root of your shared drive, like your_username/Google Drive or the like:"
   show_message message
   dir = new_existing_dir_chooser_and_go message, File.expand_path('~')
