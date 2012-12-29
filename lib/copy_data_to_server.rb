@@ -116,12 +116,12 @@ class IncomingCopier
   # returns true if "we got the lock"
   def wait_for_lock_files_to_stabilize
     start_time = Time.now
-    while Time.now - start_time < @synchro_time      
+    while (elapsed_time = Time.now - start_time) < @synchro_time      
       if !have_lock?
         delete_lock_file
         return false
       else
-        sleep!('wait_for_lock_files_to_stabilize')
+        sleep!("wait_for_lock_files_to_stabilize #{elapsed_time} < #{@synchro_time}")
       end
     end
     true

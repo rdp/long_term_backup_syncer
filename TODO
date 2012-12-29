@@ -6,7 +6,7 @@ test it between 2 computers at work
 
 = someday =
 
-prompt to cleanup old transfer
+prompt to cleanup old transfer "do you still want to transfer them?"
 
 make the long dir name less confusing
 
@@ -23,6 +23,9 @@ combine the google drive folders into subfolders
 "this many are currently online"
   "each is doing this..."
 
+  warn on old lock files?
+  delete them for current host when I come up?
+  
 warn on too many files "you should really be zipping this, buddy!"
 
 "daemonize" mode icon vs. setup
