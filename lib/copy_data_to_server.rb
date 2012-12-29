@@ -57,10 +57,6 @@ class IncomingCopier
       end
     end
   end
-
-  def size_incoming_files
-    sum = 0; files_incoming.each{|f| sum += File.size f}; sum  
-  end
   
   def cleanup_old_broken_runs
     if File.directory?(renamed_being_transferred_dir)
@@ -99,7 +95,7 @@ class IncomingCopier
   end
   
   def wait_if_already_has_lock_files
-    raise 'locking confusion?' if File.exist? this_process_lock_file
+    raise 'double locking confusion?' if File.exist? this_process_lock_file
     while Dir[lock_dir + '/*'].length > 0
       sleep!('wait_if_already_has_lock_files' + Dir[lock_dir + '/*'].join(' '))
     end
