@@ -128,8 +128,7 @@ class IncomingCopier
     while !got_it
       wait_if_already_has_lock_files
       create_lock_file
-      got_it = wait_for_lock_files_to_stabilize
-      
+      got_it = wait_for_lock_files_to_stabilize      
     end
   end
   
@@ -160,30 +159,34 @@ class IncomingCopier
   end
   
   def copy_all_files_over files, relative_to_strip_from_files, to_this_dir  
+    sum_transferred = 0
     for filename in files
       relative_extra_dir = filename[(relative_to_strip_from_files.length + 1)..-1] # like "subdir/b"
-      possibly_new_subdir = to_this_dir + '/' + File.dirname(relative_extra_dir)
-      FileUtils.mkdir_p possibly_new_subdir # I guess we might be able to use some type of *args to FileUtils.cp_r here?
+      new_subdir = to_this_dir + '/' + File.dirname(relative_extra_dir)
+      FileUtils.mkdir_p new_subdir # I guess we might be able to use some type of *args to FileUtils.cp_r here?
       if(File.file? filename)
         # avoid jruby 7046 for large files...
-        # FileUtils.cp filename, possibly_new_subdir
-        cmd = %!copy "#{filename.gsub('/', "\\")}" "#{possibly_new_subdir.gsub('/', "\\")}" > NUL 2>&1!
-        assert system(cmd)        
+        # FileUtils.cp filename, new_subdir
+        cmd = %!copy "#{filename.gsub('/', "\\")}" "#{new_subdir.gsub('/', "\\")}" > NUL 2>&1!
+        assert system(cmd)     
+		sum_transferred += File.size(new_subdir + '/' + File.filename(filename)) # getting a size now should be safe, shouldn't it?
       else
         assert File.directory?(filename)        
-        FileUtils.mkdir_p possibly_new_subdir + '/' + relative_extra_dir
+        FileUtils.mkdir_p new_subdir + '/' + relative_extra_dir
       end
     end
+	sum_transferred
   end
   
-  def copy_chunk_to_dropbox chunk
+  def copy_chunk_to_dropbox chunk, size
     assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0 # corrupted previous transfer?
     copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir
+	assert file_size_incoming_from_dropbox == size # make sure we copied them to the dropbox temp dir right
   end
   
   def copy_files_in_by_chunks
     for chunk, size in split_to_chunks
-      copy_chunk_to_dropbox chunk
+      copy_chunk_to_dropbox chunk, size
       touch_the_you_can_go_for_it_file size
       wait_for_all_clients_to_copy_files_out
       File.delete previous_you_can_go_for_it_size_file

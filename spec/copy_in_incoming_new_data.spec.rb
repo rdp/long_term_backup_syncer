@@ -124,7 +124,7 @@ describe IncomingCopier do
       File.write test_dir + '/subdir/b', '_'
       subject.create_lock_file
       assert !File.exist?("dropbox_root_dir/temp_transfer/a")
-      t = Thread.new { subject.copy_chunk_to_dropbox [test_dir + '/a', test_dir + '/subdir/b', test_dir + '/subdir2'] }
+      t = Thread.new { subject.copy_chunk_to_dropbox [test_dir + '/a', test_dir + '/subdir/b', test_dir + '/subdir2'], 2 }
       sleep 0.2
       create_block_done_files    
       t.join
@@ -238,7 +238,7 @@ describe IncomingCopier do
     it 'should copy the files over from dropbox to local storage' do      
       create_a_few_files_in_dropbox_dir
       assert !File.exist?('longterm_storage/a')
-       @subject.copy_files_from_dropbox_to_local_permanent_storage
+      @subject.copy_files_from_dropbox_to_local_permanent_storage 1001
       assert File.exist?('longterm_storage/a')  
       assert File.exist?('longterm_storage/subdir/b')
       assert File.directory?('longterm_storage/subdir2')

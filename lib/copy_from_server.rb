@@ -29,6 +29,7 @@ class IncomingCopier
       sleep!("wait_for_the_data_to_all_get_here #{length.as_gig} < #{length_expected.as_gig}")
     end
     assert file_size_incoming_from_dropbox == length_expected # not greater than it yikes!
+	length_expected
   end
   
   def file_size_incoming_from_dropbox
@@ -39,9 +40,10 @@ class IncomingCopier
     length
   end  
   
-  def copy_files_from_dropbox_to_local_permanent_storage
+  def copy_files_from_dropbox_to_local_permanent_storage size_expected
     # FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir # jruby bug
-    copy_all_files_over Dir[dropbox_temp_transfer_dir + '/**/*'], dropbox_temp_transfer_dir, @longterm_storage_dir    
+    transferred = copy_all_files_over Dir[dropbox_temp_transfer_dir + '/**/*'], dropbox_temp_transfer_dir, @longterm_storage_dir    
+	assert transferred == size_expected
   end
   
   def create_done_copying_files_to_local_file
@@ -59,8 +61,8 @@ class IncomingCopier
   # the only one you should have to call...
   def go_single_transfer_in
     wait_for_transfer_file_come_up
-    wait_for_the_data_to_all_get_here
-    copy_files_from_dropbox_to_local_permanent_storage
+    size = wait_for_the_data_to_all_get_here
+    copy_files_from_dropbox_to_local_permanent_storage size
     create_done_copying_files_to_local_file
     wait_till_current_transfer_is_over
   end
