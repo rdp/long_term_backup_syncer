@@ -101,7 +101,7 @@ class Numeric
 end
 
 poll_time = 3
-synchro_time = 100 # seconds for a trivial file to propagate
+synchro_time = 30 # seconds for a trivial file to propagate TODO 100 ?
 
 @subject = IncomingCopier.new storage[:drop_into_folder], storage[:root_drive], storage[:longterm_storage_local_dir], poll_time, synchro_time, 
   storage[:shared_drive_space_to_use].to_gig, storage[:client_count]
