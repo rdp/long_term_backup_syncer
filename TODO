@@ -33,6 +33,8 @@ assert they "have" 3G they can use to give to gdrive...
 warn on too many files "you should really be zipping this, buddy!"
 
 "daemonize" mode icon vs. setup
+
+auto empty gdrive trash [etc?]
   
 cleanup shutdown code it raises an exception?
 
