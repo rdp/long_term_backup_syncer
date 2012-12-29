@@ -25,8 +25,8 @@ class IncomingCopier
   def wait_for_the_data_to_all_get_here
     @current_transfer_file =~ /.*_(\d+)/
     length_expected = $1.to_i
-    while(file_size_incoming < length_expected)
-      sleep!('wait_for_the_data_to_all_get_here')
+    while((length = file_size_incoming) < length_expected)
+      sleep!("wait_for_the_data_to_all_get_here #{length.as_gig} < #{length_expected.as_gig}")
     end
     assert file_size_incoming == length_expected # not greater than it yikes!
   end
@@ -65,4 +65,10 @@ class IncomingCopier
     wait_till_current_transfer_is_over
   end
   
+end
+
+class Numeric
+  def as_gig
+    (self/1e9).round(2).to_s + "GB"
+  end
 end
