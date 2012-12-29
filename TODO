@@ -12,6 +12,8 @@ make the long dir name less confusing
 
 it should be able to capture to 2 places, same computer
 
+it "should be locked by somebody else" if there's a transfer request
+
 innosetup
 
 pick a new name

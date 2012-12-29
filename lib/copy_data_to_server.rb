@@ -114,7 +114,7 @@ class IncomingCopier
     start_time = Time.now
     while (elapsed_time = Time.now - start_time) < @synchro_time      
       if !have_lock?
-        delete_lock_file
+        delete_lock_file # 2 people requested the lock, so both give up (or possibly just 1)
         return false
       else
         sleep!("wait_for_lock_files_to_stabilize #{elapsed_time} < #{@synchro_time}")
@@ -217,9 +217,13 @@ class IncomingCopier
     wait_for_any_files_to_appear
     wait_for_incoming_files_to_stabilize_and_rename_entire_dir
     obtain_lock
-    copy_files_in_by_chunks
-    delete_lock_file
-    FileUtils.rm_rf renamed_being_transferred_dir # should be safe... :)
+	begin
+      copy_files_in_by_chunks
+      FileUtils.rm_rf renamed_being_transferred_dir # should be safe... :)
+	ensure
+      delete_lock_file
+	end
+	# TODO am I supposed to delete the local files here?
   end
   
   require 'copy_from_server'
