@@ -37,7 +37,7 @@ def re_configure
   storage[:root_drive] = dir
   storage[:client_count] = get_input("how many total end storage places will there be?", 2).to_i
   storage[:shared_drive_space_to_use] = get_input("How much shared drive to use for transfers (in GB)", storage[:shared_drive_space_to_use] || 2.5).to_f
-  transfer_dir = File.expand_path('~/backup_synchronizer_drop_files_here_they_will_be_copied_out_then_deleted')
+  transfer_dir = File.expand_path('~/synchronizer_drop_files_here_they_will_be_copied_out_then_deleted')
   FileUtils.mkdir_p(transfer_dir)
   storage[:drop_into_folder] = new_existing_dir_chooser_and_go("Pick directory where you can drop files in to have them transferred", storage[:drop_into_folder] || transfer_dir)
   long_term_dir = File.expand_path('~/long_term_local_backup_copy')
@@ -64,7 +64,11 @@ a.elements[:re_configure].on_clicked {
 }
 
 a.elements[:open_drop_into_folder].on_clicked {
-  SimpleGuiCreator.show_in_explorer(storage[:drop_into_folder])
+  SimpleGuiCreator.show_in_explorer(storage[:drop_into_folder]+ '/.')
+}
+
+a.elements[:open_gdrive_folder].on_clicked {
+  SimpleGuiCreator.show_in_explorer(storage[:root_drive] + '/.')
 }
 
 a.elements[:shutdown].on_clicked {
