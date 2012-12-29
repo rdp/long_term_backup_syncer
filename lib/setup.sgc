@@ -1,4 +1,4 @@
-  ---------- Dirt Simple Surveillance -----------
+  ---------- Long Term Backup Syncer -----------
     "Running!:status"
     "Root shared drive" ":root_shared_drive, width=350" [Open shared drive:open_gdrive_folder]
     "Number of clients" ":client_count, width=10"
