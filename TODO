@@ -118,7 +118,7 @@ can right click on arbitrary directories "backup track this folder"
 can limit cpu/bandwidth usage
 
 encryption?
-  no
+  optional 
 
 allow "your brother to also sync your stuff" (hmm...just use the public part of it?
   require "shared" dropbox folder, with your brother? yeah that sounds sane...
@@ -139,4 +139,16 @@ daemonizable..
 
 "client x has z files"
 
-warn on too long directory
+warn on too long directory/bad filenames in liux :)
+
+instructions on "how to use tihs with your brother's blaze storage" or the like :)
+  preferably the whole family can too
+  shared dropbox folder?
+
+periodic checking of local files
+
+= other stuff =
+
+list of questions to ask
+real website
+"you can record with a windows webcam"
