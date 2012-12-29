@@ -58,14 +58,18 @@ class IncomingCopier
     end
   end
   
+  def show_in_explorer filename
+    SimpleGuiCreator.show_in_explorer filename
+  end
+  
   def cleanup_old_broken_runs
     if File.directory?(renamed_being_transferred_dir)
 	  SimpleGuiCreator.show_message("warning, dirt dir #{renamed_being_transferred_dir} please cleanup first") # TODO prompt here
-	  SimpleGuiCreator.show_in_explorer renamed_being_transferred_dir
+	  show_in_explorer renamed_being_transferred_dir
 	end
   end  
   
-  def wait_for_incoming_files_to_stabilize_and_rename_entire_dir  
+  def wait_for_incoming_files_and_rename_entire_dir  
 	if @prompt_before_uploading
 	  @prompt_before_uploading.call
 	end	
@@ -179,9 +183,13 @@ class IncomingCopier
   end
   
   def copy_chunk_to_dropbox chunk, size
-    assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0 # corrupted previous transfer?
-    copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir
-	assert file_size_incoming_from_dropbox == size # make sure we copied them to the dropbox temp dir right
+    if Dir[dropbox_temp_transfer_dir + '/*'].length != 0
+	  show_in_explorer dropbox_temp_transfer_dir
+	  show_message "transfer directory is dirty from a previous run, please clean it up, or hit ok and leave\nstuff in it to abort current"
+	end
+	assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0	  
+    copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir	
+	assert file_size_incoming_from_dropbox == size, "expecting size #{size} and put size #{file_size_incoming_from_dropbox}" # make sure we copied them to the dropbox temp dir right
   end
   
   def copy_files_in_by_chunks
@@ -215,7 +223,7 @@ class IncomingCopier
   # the only one you should call...
   def go_single_transfer_out
     wait_for_any_files_to_appear
-    wait_for_incoming_files_to_stabilize_and_rename_entire_dir
+    wait_for_incoming_files_and_rename_entire_dir
     obtain_lock
 	begin
       copy_files_in_by_chunks
