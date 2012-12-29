@@ -181,6 +181,7 @@ class IncomingCopier
   end
   
   def copy_chunk_to_dropbox chunk
+    assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0 # corrupted previous transfer?
     copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir
   end
   

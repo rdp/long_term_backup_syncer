@@ -108,7 +108,7 @@ synchro_time = 100 # seconds for a trivial file to propagate
 @subject.prompt_before_uploading = proc {
   got = :no
   while got == :no
-    got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)}.join(', ')},\n would you like to do that now, or wait?", :yes => "Now, I'm ready!", :no => "wait")
+    got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)}.join(', ')},\n would you like to do that now, or wait\n(to put more files there or rename some first)?", :yes => "Now, I'm ready!", :no => "wait")
 	if got == :no
       sleep 10
 	end
