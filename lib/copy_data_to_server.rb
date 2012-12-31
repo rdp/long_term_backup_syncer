@@ -109,10 +109,16 @@ class IncomingCopier
     @previous_go_for_it_filename = "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Socket.gethostname}_#{Process.pid}_#{@transfer_count += 1}_#{current_chunk_size}"
   end
   
-  def touch_the_you_can_go_for_it_file current_chunk_size
+  def sanity_check_clean_and_locked
     assert have_lock?, "should be locked"
     assert client_done_copying_files.length == 0 # just in case :P
-    assert current_transfer_ready_files.length == 0 # just in case :P
+    assert current_transfer_ready_files.length == 0 # just in case :P	
+  end
+  
+  # LODO assert that the 'go' file for clients is still there when they finish...though what could they ever do in that case? prompt at least?
+  
+  def touch_the_you_can_go_for_it_file current_chunk_size
+    sanity_check_clean
     FileUtils.touch next_you_can_go_for_it_after_size_file(current_chunk_size)
   end
   
@@ -227,6 +233,7 @@ class IncomingCopier
   end
   
   def copy_files_in_by_chunks
+    sanity_check_clean_and_locked
     for chunk, size in split_to_chunks
       copy_chunk_to_dropbox chunk, size
       touch_the_you_can_go_for_it_file size
