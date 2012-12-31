@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'simple_gui_creator' # we use it inline now
 
 class IncomingCopier
 
@@ -252,7 +253,6 @@ class IncomingCopier
       copy_chunk_to_dropbox chunk, size
       touch_the_you_can_go_for_it_file size
       wait_for_all_clients_to_copy_files_out
-	  p 'deleting', previous_you_can_go_for_it_size_file
       File.delete previous_you_can_go_for_it_size_file
       FileUtils.rm_rf dropbox_temp_transfer_dir
       Dir.mkdir dropbox_temp_transfer_dir

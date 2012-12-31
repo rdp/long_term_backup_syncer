@@ -197,8 +197,7 @@ describe IncomingCopier do
     @subject.create_lock_file
     @subject.touch_the_you_can_go_for_it_file(777)
     assert File.exist? @subject.previous_you_can_go_for_it_size_file
-    proc { @subject.touch_the_you_can_go_for_it_file(787) }.should raise_exception /should be locked/
-    proc { @subject.copy_files_in_by_chunks }.should raise_exception /no files/
+    proc { @subject.split_to_chunks }.should raise_exception /no files/
   end
 
   def time_in_other_thread
