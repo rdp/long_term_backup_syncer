@@ -236,12 +236,13 @@ class IncomingCopier
   end
   
   def client_done_copying_files
+  p 'looking in ', track_when_client_done_dir
     Dir[track_when_client_done_dir + '/*']
   end
   
   def wait_for_all_clients_to_copy_files_out
-    while client_done_copying_files.length != @total_client_size
-      sleep!('wait_for_all_clients_to_copy_files_out')
+    while (got = client_done_copying_files.length) != @total_client_size
+      sleep!("wait_for_all_clients_to_copy_files_out #{got} < #{@total_client_size}")
     end
     for file in client_done_copying_files
       File.delete file
