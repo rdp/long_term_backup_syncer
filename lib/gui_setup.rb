@@ -67,10 +67,6 @@ a.elements[:open_drop_into_folder].on_clicked {
   SimpleGuiCreator.show_in_explorer(storage[:drop_into_folder]+ '/.')
 }
 
-a.elements[:open_gdrive_folder].on_clicked {
-  SimpleGuiCreator.show_in_explorer(storage[:root_drive] + '/.')
-}
-
 a.elements[:shutdown].on_clicked {
   shutdown
 }
