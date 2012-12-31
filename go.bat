@@ -1,1 +1,1 @@
-j bin/gui_backup_syncer
+j %* bin/gui_backup_syncer

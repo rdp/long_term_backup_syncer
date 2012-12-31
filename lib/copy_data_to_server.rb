@@ -139,7 +139,7 @@ class IncomingCopier
   # returns true if "we got the lock"
   def wait_for_lock_files_to_stabilize
     start_time = Time.now
-    while (elapsed_time = Time.now - start_time) < @synchro_time      
+    while ((elapsed_time = Time.now - start_time) < @synchro_time) && !File.exist?('pretend_lock_files_have_stabilized')
       if !have_lock?
         delete_lock_file # 2 people requested the lock, so both give up (or possibly just 1)
         return false
@@ -155,7 +155,7 @@ class IncomingCopier
     while !got_it
       wait_if_already_has_lock_files
       create_lock_file
-      got_it = wait_for_lock_files_to_stabilize      
+      got_it = wait_for_lock_files_to_stabilize
     end
   end
   
@@ -165,13 +165,17 @@ class IncomingCopier
     current_sum = 0    
     files_to_chunk = files_incoming(true).sort
     raise 'no files?' if files_to_chunk.empty?
-    files_to_chunk.each{|f| 
-      file_size = File.size f # work with a '0' for empty dirs, which is ok
+    files_to_chunk.each{|f|
+	  if File.file? f
+        file_size = File.size f
+	  else
+	    file_size = 0 # count directories as 0 size
+	  end
       raise 'cannot fit that file ever [yet!] ask for it!' if file_size > @dropbox_size
       if file_size + current_sum > @dropbox_size
         out << [current_group, current_sum]
         current_group = [f]
-        current_sum = file_size
+        current_sum = file_size # reset current_sum
       else
         current_group << f
         current_sum += file_size
@@ -192,7 +196,7 @@ class IncomingCopier
       new_subdir = to_this_dir + '/' + File.dirname(relative_extra_dir)
       FileUtils.mkdir_p new_subdir # I guess we might be able to use some type of *args to FileUtils.cp_r here?
       if(File.file? filename)
-        # avoid jruby 7046 for large files...
+        # avoid jruby 7046 for now
         # FileUtils.cp filename, new_subdir
         cmd = %!copy "#{filename.gsub('/', "\\")}" "#{new_subdir.gsub('/', "\\")}" > NUL 2>&1!
         assert system(cmd)
@@ -203,16 +207,15 @@ class IncomingCopier
         FileUtils.mkdir_p new_subdir + '/' + relative_extra_dir
       end
     end
-	p "copied this many to the temp dir #{sum_transferred}"
 	sum_transferred
   end
   
   def copy_chunk_to_dropbox chunk, size
     if Dir[dropbox_temp_transfer_dir + '/*'].length != 0
 	  show_in_explorer dropbox_temp_transfer_dir
-	  show_message "transfer directory is dirty from a previous run, please clean it up, or hit ok and leave\nstuff in it to abort current"
+	  show_message "transfer directory is dirty from a previous run, please clean it up, abd gut ir\bor hit ok and leave stuff in it to abort current transfer"
 	end
-	assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0	  
+	assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0, "shared temp transfer drop dir had some unknown files in it?"
     copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir	
 	assert file_size_incoming_from_dropbox == size, "expecting size #{size} and put size #{file_size_incoming_from_dropbox}" # make sure we copied them to the dropbox temp dir right
   end

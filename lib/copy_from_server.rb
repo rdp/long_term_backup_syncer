@@ -35,7 +35,7 @@ class IncomingCopier
   def file_size_incoming_from_dropbox
     length = 0
     Dir[dropbox_temp_transfer_dir + '/**/*'].each{|f|
-      length += File.size(f)
+      length += File.size(f) if File.file?(f)
     }
     length
   end  
