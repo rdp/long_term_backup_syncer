@@ -2,7 +2,7 @@
 class IncomingCopier
 
   def current_transfer_ready_files
-    Dir["#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_*"]
+    Dir["#{lock_dir}/begin_transfer_courtesy_*"]
   end
   
   @shutdown = false

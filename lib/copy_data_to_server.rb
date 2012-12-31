@@ -25,15 +25,15 @@ class IncomingCopier
   attr_reader :local_drop_here_to_save_dir
 
   def dropbox_temp_transfer_dir
-    "#{@dropbox_root_local_dir}/temp_transfer"
+    "#{@dropbox_root_local_dir}/backup_syncer/temp_transfer_big_dir"
   end
   
   def lock_dir
-    "#{@dropbox_root_local_dir}/synchronization"
+    "#{@dropbox_root_local_dir}/backup_syncer/synchronization"
   end
   
   def track_when_client_done_dir
-    "#{@dropbox_root_local_dir}/track_which_clients_are_done_dir"
+    "#{@dropbox_root_local_dir}/backup_syncer/track_which_clients_are_done_dir"
   end
   
   def sleep!(output_char, sleep_time=@sleep_time)
@@ -94,11 +94,11 @@ class IncomingCopier
   end
   
   def old_lock_files_this_box
-    Dir["#{@dropbox_root_local_dir}/synchronization/request_#{Socket.gethostname}_*.lock"].reject{|f| f == this_process_lock_file} # just want old ones :)
+    Dir["#{lock_dir}/request_#{Socket.gethostname}_*.lock"].reject{|f| f == this_process_lock_file} # just want old ones :)
   end
   
   def this_process_lock_file
-    "#{@dropbox_root_local_dir}/synchronization/request_#{Socket.gethostname}_#{Process.pid}.lock"
+    "#{lock_dir}/request_#{Socket.gethostname}_#{Process.pid}.lock"
   end
   
   def previous_you_can_go_for_it_size_file
@@ -107,7 +107,7 @@ class IncomingCopier
   
   def next_you_can_go_for_it_after_size_file(current_chunk_size)
     # use filename instead of size, to make it synchronously created with its contents :)
-    @previous_go_for_it_filename = "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Socket.gethostname}_#{Process.pid}_#{@transfer_count += 1}_#{current_chunk_size}"
+    @previous_go_for_it_filename = "#{lock_dir}/begin_transfer_courtesy_#{Socket.gethostname}_#{Process.pid}_#{@transfer_count += 1}_#{current_chunk_size}"
   end
   
   def sanity_check_clean_and_locked

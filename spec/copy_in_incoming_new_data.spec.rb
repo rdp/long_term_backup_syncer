@@ -20,7 +20,7 @@ describe IncomingCopier do
     Dir.mkdir 'dropbox_root_dir'
     Dir.mkdir 'longterm_storage'
     @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 1000, 1
-    @competitor = "dropbox_root_dir/synchronization/some_other_process.lock"
+    @competitor = "dropbox_root_dir/backup_syncer/synchronization/some_other_process.lock"
   end
 
   it 'should wait for incoming data' do
@@ -123,14 +123,14 @@ describe IncomingCopier do
       File.write test_dir + '/a', '_'
       File.write test_dir + '/subdir/b', '_'
       subject.create_lock_file
-      assert !File.exist?("dropbox_root_dir/temp_transfer/a")
+      assert !File.exist?("dropbox_root_dir/backup_syncer/temp_transfer_big_dir/a")
       t = Thread.new { subject.copy_chunk_to_dropbox [test_dir + '/a', test_dir + '/subdir/b', test_dir + '/subdir2'], 2 }
       sleep 0.2
       create_block_done_files    
       t.join
-      assert File.exist? "dropbox_root_dir/temp_transfer/a"
-      assert File.exist? "dropbox_root_dir/temp_transfer/subdir/b"
-      assert File.directory? "dropbox_root_dir/temp_transfer/subdir2" # empty dir
+      assert File.exist? "dropbox_root_dir/backup_syncer/temp_transfer_big_dir/a"
+      assert File.exist? "dropbox_root_dir/backup_syncer/temp_transfer_big_dir/subdir/b"
+      assert File.directory? "dropbox_root_dir/backup_syncer/temp_transfer_big_dir/subdir2" # empty dir
     ensure
       FileUtils.rm_rf test_dir
     end    
@@ -144,15 +144,15 @@ describe IncomingCopier do
   end
   
   def create_a_few_files_in_dropbox_dir
-    FileUtils.mkdir_p "dropbox_root_dir/temp_transfer/subdir"
-    File.write 'dropbox_root_dir/temp_transfer/a', '_'
-    File.write 'dropbox_root_dir/temp_transfer/subdir/b', '_' * 1000  
-    Dir.mkdir 'dropbox_root_dir/temp_transfer/subdir2' # an empty dir :)
+    FileUtils.mkdir_p "dropbox_root_dir/backup_syncer/temp_transfer_big_dir/subdir"
+    File.write 'dropbox_root_dir/backup_syncer/temp_transfer_big_dir/a', '_'
+    File.write 'dropbox_root_dir/backup_syncer/temp_transfer_big_dir/subdir/b', '_' * 1000  
+    Dir.mkdir 'dropbox_root_dir/backup_syncer/temp_transfer_big_dir/subdir2' # an empty dir :)
   end
 
   it 'should do a complete multi-chunk transfer' do
     create_a_few_files_in_to_transfer_dir
-    assert !File.directory?('dropbox_root_dir/temp_transfer/subdir2')
+    assert !File.directory?('dropbox_root_dir/backup_syncer/temp_transfer_big_dir/subdir2')
 
     t = Thread.new { @subject.go_single_transfer_out }    
     # 2 chunks
@@ -165,13 +165,13 @@ describe IncomingCopier do
     while !File.exist?(@subject.previous_you_can_go_for_it_size_file) # takes quite awhile [LODO check why?...]
       sleep 0.01
     end
-    assert File.directory?('dropbox_root_dir/temp_transfer/subdir2')
+    assert File.directory?('dropbox_root_dir/backup_syncer/temp_transfer_big_dir/subdir2')
     # "sure we got 'em them"
     create_block_done_files
     t.join
     
     assert @subject.client_done_copying_files.length == 0 # it should clean up old client done files
-    Dir['dropbox_root_dir/temp_transfer/*'].length.should == 0 # cleaned up drop box after successful transfer
+    Dir['dropbox_root_dir/backup_syncer/temp_transfer_big_dir/*'].length.should == 0 # cleaned up drop box after successful transfer
     assert !File.exist?(its_lock_file)
     assert !File.exist?(@subject.previous_you_can_go_for_it_size_file)
     assert !File.exist?('test_dir/a')
@@ -219,9 +219,9 @@ describe IncomingCopier do
       @subject.wait_for_transfer_file_come_up # notice it
       t = time_in_other_thread { @subject.wait_for_the_data_to_all_get_here }
       sleep 0.1
-       File.write "dropbox_root_dir/temp_transfer/a", '_' * 766
+       File.write "dropbox_root_dir/backup_syncer/temp_transfer_big_dir/a", '_' * 766
       sleep 0.2
-       File.write "dropbox_root_dir/temp_transfer/b", '_' * 1
+       File.write "dropbox_root_dir/backup_syncer/temp_transfer_big_dir/b", '_' * 1
       t.join
       @thread_took.should be > 0.3    
     end
@@ -230,7 +230,7 @@ describe IncomingCopier do
       FileUtils.touch @subject.next_you_can_go_for_it_after_size_file(767)
       @subject.wait_for_transfer_file_come_up # notice it
       sleep 0.1 # let it sleep
-       File.write "dropbox_root_dir/temp_transfer/a", '_' * 786
+       File.write "dropbox_root_dir/backup_syncer/temp_transfer_big_dir/a", '_' * 786
       #proc { @subject.wait_for_the_data_to_all_get_here }.should raise_exception(/no files/) # TODO uncomment    
     end
     
