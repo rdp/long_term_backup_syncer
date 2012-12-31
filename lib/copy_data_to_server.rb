@@ -111,14 +111,28 @@ class IncomingCopier
   
   def sanity_check_clean_and_locked
     assert have_lock?, "should be locked"
-    assert client_done_copying_files.length == 0 # just in case :P
-    assert current_transfer_ready_files.length == 0 # just in case :P	
+	# we have the lock, so we can control these, right?
+	# TODO re-lock? give it some more time?
+    if client_done_copying_files.length != 0
+	  if show_select_buttons_prompt("detected some orphaned 'transfer done' files, delete them?") == :yes
+	    client_done_copying_files.each{|f| File.delete(f) }
+      else
+	    raise 'dunno what to do here'
+	  end
+	end
+    if current_transfer_ready_files.length != 0
+	  if show_select_buttons_prompt("detected some orphaned 'transfer read' files, delete them?") == :yes
+	    current_transfer_ready_files.each{|f| File.delete(f) }
+	  else
+	    raise 'dunno how to proceed'	  
+	  end	
+	end
   end
   
   # LODO assert that the 'go' file for clients is still there when they finish...though what could they ever do in that case? prompt at least?
   
   def touch_the_you_can_go_for_it_file current_chunk_size
-    sanity_check_clean
+    sanity_check_clean_and_locked
     FileUtils.touch next_you_can_go_for_it_after_size_file(current_chunk_size)
   end
   
@@ -221,15 +235,15 @@ class IncomingCopier
   end
   
   def copy_chunk_to_dropbox chunk, size
-    if Dir[dropbox_temp_transfer_dir + '/*'].length != 0
-      show_in_explorer dropbox_temp_transfer_dir
-      show_message "transfer directory is dirty from a previous run, please clean it up, abd gut ir\bor hit ok and leave stuff in it to abort current transfer"
-    end
-	if !File.exist? "trust_dropbox" # testing short circuit
+  	if !File.exist? "trust_dropbox" # testing short circuit
+      if Dir[dropbox_temp_transfer_dir + '/*'].length != 0
+        show_in_explorer dropbox_temp_transfer_dir
+        show_message "transfer directory is dirty from a previous run, please clean it up, abd gut ir\bor hit ok and leave stuff in it to abort current transfer (or touch trust_dropbox file)"
+      end
       assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0, "shared temp transfer drop dir had some unknown files in it?"
       copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir, 'to dropbox'
 	end
-    assert file_size_incoming_from_dropbox == size, "expecting size #{size} and put size #{file_size_incoming_from_dropbox}" # make sure we copied them to the dropbox temp dir right
+    assert file_size_incoming_from_dropbox == size, "expecting size #{size} but put size #{file_size_incoming_from_dropbox}"
   end
   
   def copy_files_in_by_chunks
