@@ -196,13 +196,14 @@ class IncomingCopier
         # FileUtils.cp filename, new_subdir
         cmd = %!copy "#{filename.gsub('/', "\\")}" "#{new_subdir.gsub('/', "\\")}" > NUL 2>&1!
         assert system(cmd)
-        sleep('copy_all_files_over', 0) # status update :)		
+        sleep!('copy_all_files_over', 0) # status update :)		
 		sum_transferred += File.size(new_subdir + '/' + File.filename(filename)) # getting a size now should be safe, shouldn't it?
       else
-        assert File.directory?(filename)        
+        assert File.directory?(filename)
         FileUtils.mkdir_p new_subdir + '/' + relative_extra_dir
       end
     end
+	p "copied this many to the temp dir #{sum_transferred}"
 	sum_transferred
   end
   
