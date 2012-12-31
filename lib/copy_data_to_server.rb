@@ -32,7 +32,7 @@ class IncomingCopier
   end
   
   def track_when_client_done_dir
-    "#{@dropbox_root_local_dir}/track_who_is_done_dir"
+    "#{@dropbox_root_local_dir}/track_which_clients_are_done_dir"
   end
   
   def sleep!(output_char, sleep_time=@sleep_time)
@@ -93,7 +93,7 @@ class IncomingCopier
   end
   
   def old_lock_files_this_box
-    Dir["#{@dropbox_root_local_dir}/synchronization/request_#{Socket.gethostname}_*.lock"].reject{|f| f.contain? Process.pid.to_s}
+    Dir["#{@dropbox_root_local_dir}/synchronization/request_#{Socket.gethostname}_*.lock"].reject{|f| f == this_process_lock_file} # just want old ones :)
   end
   
   def this_process_lock_file
@@ -109,22 +109,32 @@ class IncomingCopier
     @previous_go_for_it_filename = "#{@dropbox_root_local_dir}/synchronization/begin_transfer_courtesy_#{Socket.gethostname}_#{Process.pid}_#{@transfer_count += 1}_#{current_chunk_size}"
   end
   
-  def touch_the_you_can_go_for_it_file current_chunk_size
+  def sanity_check_clean_and_locked
     assert have_lock?, "should be locked"
     assert client_done_copying_files.length == 0 # just in case :P
-    assert current_transfer_ready_files.length == 0 # just in case :P
+    assert current_transfer_ready_files.length == 0 # just in case :P	
+  end
+  
+  # LODO assert that the 'go' file for clients is still there when they finish...though what could they ever do in that case? prompt at least?
+  
+  def touch_the_you_can_go_for_it_file current_chunk_size
+    sanity_check_clean
     FileUtils.touch next_you_can_go_for_it_after_size_file(current_chunk_size)
   end
   
+  def all_lock_files
+    Dir[lock_dir + '/*.lock']  
+  end
+  
   def wait_if_already_has_lock_files
-    raise 'double locking confusion?' if File.exist? this_process_lock_file
     if old_lock_files_this_box.length > 0
       if show_select_buttons_prompt("found some apparent old lock files from this box, they'r eprobably orphaned, delete them?\n#{old_lock_files_this_box.join(', ')}") == :yes
         old_lock_files_this_box.each{|f| File.delete(f) }
       end
     end
-    while Dir[lock_dir + '/*'].length > 0
-      sleep!('wait_if_already_has_lock_files' + Dir[lock_dir + '/*'].join(' '))
+    while all_lock_files.length > 0
+      raise 'double locking confusion?' if File.exist? this_process_lock_file
+      sleep!('waiting for old lock files to disappear ' + all_lock_files.join(' '))
     end
   end
   
@@ -133,15 +143,15 @@ class IncomingCopier
   end
   
   def have_lock?
-    Dir[lock_dir + '/*'] == [this_process_lock_file]
+    all_lock_files == [this_process_lock_file] # can't be more than us :)
   end
   
-  # returns true if "we got the lock"
+  # returns true if "we got the lock", or false if there is contention for it
   def wait_for_lock_files_to_stabilize
     start_time = Time.now
-    while ((elapsed_time = Time.now - start_time) < @synchro_time) && !File.exist?('pretend_lock_files_have_stabilized')
+    while ((elapsed_time = Time.now - start_time) < @synchro_time) && !File.exist?('pretend_lock_files_have_already_stabilized') # speed up IT testing
       if !have_lock?
-        delete_lock_file # 2 people requested the lock, so both give up (or possibly just 1)
+        delete_lock_file # 2 people requested the lock, so both give up (or possibly just this 1 give up)
         return false
       else
         sleep!("wait_for_lock_files_to_stabilize #{elapsed_time} < #{@synchro_time}")
@@ -215,16 +225,20 @@ class IncomingCopier
       show_in_explorer dropbox_temp_transfer_dir
       show_message "transfer directory is dirty from a previous run, please clean it up, abd gut ir\bor hit ok and leave stuff in it to abort current transfer"
     end
-    assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0, "shared temp transfer drop dir had some unknown files in it?"
-    copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir, 'to dropbox'
+	if !File.exist? "trust_dropbox" # testing short circuit
+      assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0, "shared temp transfer drop dir had some unknown files in it?"
+      copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir, 'to dropbox'
+	end
     assert file_size_incoming_from_dropbox == size, "expecting size #{size} and put size #{file_size_incoming_from_dropbox}" # make sure we copied them to the dropbox temp dir right
   end
   
   def copy_files_in_by_chunks
+    sanity_check_clean_and_locked
     for chunk, size in split_to_chunks
       copy_chunk_to_dropbox chunk, size
       touch_the_you_can_go_for_it_file size
       wait_for_all_clients_to_copy_files_out
+	  p 'deleting', previous_you_can_go_for_it_size_file
       File.delete previous_you_can_go_for_it_size_file
       FileUtils.rm_rf dropbox_temp_transfer_dir
       Dir.mkdir dropbox_temp_transfer_dir
@@ -236,7 +250,7 @@ class IncomingCopier
   end
   
   def client_done_copying_files
-  p 'looking in ', track_when_client_done_dir
+    p ' client_done_copying_fileslooking in ', track_when_client_done_dir
     Dir[track_when_client_done_dir + '/*']
   end
   
@@ -256,11 +270,11 @@ class IncomingCopier
     obtain_lock
     begin
       copy_files_in_by_chunks
-      FileUtils.rm_rf renamed_being_transferred_dir # should be safe... :)
+	  # delete the local temp dir
+      FileUtils.rm_rf renamed_being_transferred_dir # should be all copies over... :)
     ensure
       delete_lock_file
-    end
-    # TODO am I supposed to delete the local files here?
+    end    
   end
   
   require 'copy_from_server'

@@ -48,7 +48,7 @@ class IncomingCopier
   
   def create_done_copying_files_to_local_file
     path = track_when_client_done_dir + "/done_with_#{File.filename @current_transfer_file}"
-    p "touching #{path}"
+    p "client touching done file #{path}"
     FileUtils.touch path
   end
   
