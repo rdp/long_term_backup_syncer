@@ -18,8 +18,8 @@ class IncomingCopier
         raise 'shutting down' # should be safe here...
       end
     end
-    raise files.inspect + " should be size 1?" if files.length != 1
-    @current_transfer_file = files[0]    
+    raise files.inspect + " should have been size 1?" if files.length != 1
+    @current_transfer_file = files[0]
   end
   
   def wait_for_the_data_to_all_get_here
@@ -47,14 +47,16 @@ class IncomingCopier
   end
   
   def create_done_copying_files_to_local_file
-    FileUtils.touch track_when_client_done_dir + "/done_with_#{File.filename @current_transfer_file}" # LODO use
+    path = track_when_client_done_dir + "/done_with_#{File.filename @current_transfer_file}"
+    p "touching #{path}"
+    FileUtils.touch path
   end
   
   def wait_till_current_transfer_is_over
     # server might be too fast for us...and delete it before we reach here, possibly
     # assert File.exist? @current_transfer_file
     while File.exist? @current_transfer_file
-      sleep!('wait_till_current_transfer_is_over')
+      sleep!('wait_till_current_transfer_is_deemed_over_by_sender')
     end
   end
   
