@@ -256,9 +256,18 @@ class IncomingCopier
       File.delete previous_you_can_go_for_it_size_file
 	  p "clearing temp transfer dir"
       FileUtils.rm_rf dropbox_temp_transfer_dir
-      Dir.mkdir dropbox_temp_transfer_dir # google drive can die here
+	  mkdir_ignore_errors dropbox_temp_transfer_dir  # google drive can die here
     end
-	p "done transferring all for this one"
+	p "done transferring all transfer chunks for this one"
+  end
+  
+  def mkdir_ignore_errors dir
+    begin
+      Dir.mkdir dir
+	rescue Errno::EIO => busy
+	  sleep 10
+	  retry
+	end
   end
   
   def delete_lock_file
