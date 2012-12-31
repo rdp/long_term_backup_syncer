@@ -15,7 +15,7 @@ class IncomingCopier
     FileUtils.mkdir_p dropbox_temp_transfer_dir
     FileUtils.mkdir_p track_when_client_done_dir
     @transfer_count = 0
-	@prompt_before_uploading = nil
+    @prompt_before_uploading = nil
   end
   
   attr_accessor :sleep_time
@@ -52,7 +52,7 @@ class IncomingCopier
   def wait_for_any_files_to_appear
     while files_incoming.length == 0
       sleep!('wait_for_any_files_to_appear')
-  	  if @shutdown
+        if @shutdown
         raise 'shutting down'
       end
     end
@@ -68,25 +68,25 @@ class IncomingCopier
   
   def cleanup_old_broken_runs
     if File.directory?(renamed_being_transferred_dir)
-	  if Dir[renamed_being_transferred_dir + '/*'].length > 0 && Dir[local_drop_here_to_save_dir + '/*'].length == 0
-	    if show_select_buttons_prompt("appears there was an interrupted transfer, would you like to restart it?") == :yes
-		  FileUtils.rmdir local_drop_here_to_save_dir		  
+      if Dir[renamed_being_transferred_dir + '/*'].length > 0 && Dir[local_drop_here_to_save_dir + '/*'].length == 0
+        if show_select_buttons_prompt("appears there was an interrupted transfer, would you like to restart it?") == :yes
+          FileUtils.rmdir local_drop_here_to_save_dir          
           FileUtils.mv renamed_being_transferred_dir, local_drop_here_to_save_dir
-		  return
-		end
-	  end
-	end 
-	# TODO prompt delete?
-    SimpleGuiCreator.show_message("warning, dirty temp dir #{renamed_being_transferred_dir} please cleanup first?")
-	show_in_explorer renamed_being_transferred_dir
+          return
+        end
+      end
+      # TODO prompt delete here too?
+      SimpleGuiCreator.show_message("warning, dirty temp dir #{renamed_being_transferred_dir} please cleanup first?")
+      show_in_explorer renamed_being_transferred_dir
+    end 
   end  
   
   attr_reader :local_drop_here_to_save_dir
   
   def wait_for_incoming_files_and_rename_entire_dir  
-	if @prompt_before_uploading
-	  @prompt_before_uploading.call
-	end	
+    if @prompt_before_uploading
+      @prompt_before_uploading.call
+    end    
     assert !File.directory?(renamed_being_transferred_dir) # should have been cleaned up already [!]...
     FileUtils.mv local_drop_here_to_save_dir, renamed_being_transferred_dir
     Dir.mkdir local_drop_here_to_save_dir # recreate it
@@ -118,11 +118,11 @@ class IncomingCopier
   
   def wait_if_already_has_lock_files
     raise 'double locking confusion?' if File.exist? this_process_lock_file
-	if old_lock_files_this_box.length > 0
-	  if show_select_buttons_prompt("found some apparent old lock files from this box, they'r eprobably orphaned, delete them?\n#{old_lock_files_this_box.join(', ')}") == :yes
-	    old_lock_files_this_box.each{|f| File.delete(f) }
-	  end
-	end
+    if old_lock_files_this_box.length > 0
+      if show_select_buttons_prompt("found some apparent old lock files from this box, they'r eprobably orphaned, delete them?\n#{old_lock_files_this_box.join(', ')}") == :yes
+        old_lock_files_this_box.each{|f| File.delete(f) }
+      end
+    end
     while Dir[lock_dir + '/*'].length > 0
       sleep!('wait_if_already_has_lock_files' + Dir[lock_dir + '/*'].join(' '))
     end
@@ -166,11 +166,11 @@ class IncomingCopier
     files_to_chunk = files_incoming(true).sort
     raise 'no files?' if files_to_chunk.empty?
     files_to_chunk.each{|f|
-	  if File.file? f
+      if File.file? f
         file_size = File.size f
-	  else
-	    file_size = 0 # count directories as 0 size
-	  end
+      else
+        file_size = 0 # count directories as 0 size
+      end
       raise 'cannot fit that file ever [yet!] ask for it!' if file_size > @dropbox_size
       if file_size + current_sum > @dropbox_size
         out << [current_group, current_sum]
@@ -189,7 +189,7 @@ class IncomingCopier
     @local_drop_here_to_save_dir + '.being_transferred'
   end
   
-  def copy_all_files_over files, relative_to_strip_from_files, to_this_dir  
+  def copy_all_files_over files, relative_to_strip_from_files, to_this_dir, name
     sum_transferred = 0
     for filename in files
       relative_extra_dir = filename[(relative_to_strip_from_files.length + 1)..-1] # like "subdir/b"
@@ -200,24 +200,24 @@ class IncomingCopier
         # FileUtils.cp filename, new_subdir
         cmd = %!copy "#{filename.gsub('/', "\\")}" "#{new_subdir.gsub('/', "\\")}" > NUL 2>&1!
         assert system(cmd)
-        sleep!('copy_all_files_over', 0) # status update :)		
-		sum_transferred += File.size(new_subdir + '/' + File.filename(filename)) # getting a size now should be safe, shouldn't it?
+        sleep!('copy_all_files_over' + name, 0) # status update :)        
+        sum_transferred += File.size(new_subdir + '/' + File.filename(filename)) # getting a size now should be safe, shouldn't it?
       else
         assert File.directory?(filename)
         FileUtils.mkdir_p new_subdir + '/' + relative_extra_dir
       end
     end
-	sum_transferred
+    sum_transferred
   end
   
   def copy_chunk_to_dropbox chunk, size
     if Dir[dropbox_temp_transfer_dir + '/*'].length != 0
-	  show_in_explorer dropbox_temp_transfer_dir
-	  show_message "transfer directory is dirty from a previous run, please clean it up, abd gut ir\bor hit ok and leave stuff in it to abort current transfer"
-	end
-	assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0, "shared temp transfer drop dir had some unknown files in it?"
-    copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir	
-	assert file_size_incoming_from_dropbox == size, "expecting size #{size} and put size #{file_size_incoming_from_dropbox}" # make sure we copied them to the dropbox temp dir right
+      show_in_explorer dropbox_temp_transfer_dir
+      show_message "transfer directory is dirty from a previous run, please clean it up, abd gut ir\bor hit ok and leave stuff in it to abort current transfer"
+    end
+    assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0, "shared temp transfer drop dir had some unknown files in it?"
+    copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir, 'to dropbox'
+    assert file_size_incoming_from_dropbox == size, "expecting size #{size} and put size #{file_size_incoming_from_dropbox}" # make sure we copied them to the dropbox temp dir right
   end
   
   def copy_files_in_by_chunks
@@ -253,13 +253,13 @@ class IncomingCopier
     wait_for_any_files_to_appear
     wait_for_incoming_files_and_rename_entire_dir
     obtain_lock
-	begin
+    begin
       copy_files_in_by_chunks
       FileUtils.rm_rf renamed_being_transferred_dir # should be safe... :)
-	ensure
+    ensure
       delete_lock_file
-	end
-	# TODO am I supposed to delete the local files here?
+    end
+    # TODO am I supposed to delete the local files here?
   end
   
   require 'copy_from_server'

@@ -41,9 +41,9 @@ class IncomingCopier
   end  
   
   def copy_files_from_dropbox_to_local_permanent_storage size_expected
-    # FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir # jruby bug
-    transferred = copy_all_files_over Dir[dropbox_temp_transfer_dir + '/**/*'], dropbox_temp_transfer_dir, @longterm_storage_dir    
-	assert transferred == size_expected
+    # FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir # avoid jruby file size bug
+    transferred = copy_all_files_over Dir[dropbox_temp_transfer_dir + '/**/*'], dropbox_temp_transfer_dir, @longterm_storage_dir, 'from dropbox'
+    assert transferred == size_expected
   end
   
   def create_done_copying_files_to_local_file

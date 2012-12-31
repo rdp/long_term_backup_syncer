@@ -1,7 +1,7 @@
   ---------- Long Term Backup Syncer -----------
     "Running!:status"
     "Root shared drive" ":root_shared_drive, width=350" [Open shared drive:open_gdrive_folder]
-    "Number of clients" ":client_count, width=10"
+    "Number of final storage locations" ":client_count, width=10"
     "How much shared drive to use for transfers" ":shared_drive_space_to_use, width=25" "GB"
     "Folder to drop stuff into for it to be synchronized everywhere" ":drop_into_folder, width=350" [Open drop into folder:open_drop_into_folder]
     "Folder to use for long term preservation locally" ":longterm_storage_local_dir, width=350"
