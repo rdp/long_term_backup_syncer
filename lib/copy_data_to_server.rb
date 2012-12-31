@@ -254,9 +254,11 @@ class IncomingCopier
       touch_the_you_can_go_for_it_file size
       wait_for_all_clients_to_copy_files_out
       File.delete previous_you_can_go_for_it_size_file
+	  p "clearing temp transfer dir"
       FileUtils.rm_rf dropbox_temp_transfer_dir
-      Dir.mkdir dropbox_temp_transfer_dir
+      Dir.mkdir dropbox_temp_transfer_dir # google drive can die here
     end
+	p "done transferring all for this one"
   end
   
   def delete_lock_file
@@ -272,6 +274,7 @@ class IncomingCopier
     while (got = client_done_copying_files.length) != @total_client_size
       sleep!("wait_for_all_clients_to_copy_files_out #{got} < #{@total_client_size}")
     end
+	p "detected all clients are done, deleting their notification files"
     for file in client_done_copying_files
       File.delete file
     end
