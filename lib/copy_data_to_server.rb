@@ -62,20 +62,38 @@ class IncomingCopier
     SimpleGuiCreator.show_in_explorer filename
   end
   
+  def show_select_buttons_prompt *args # :yes => ...
+    SimpleGuiCreator.show_select_buttons_prompt *args
+  end
+  
   def cleanup_old_broken_runs
     if File.directory?(renamed_being_transferred_dir)
-	  SimpleGuiCreator.show_message("warning, dirt dir #{renamed_being_transferred_dir} please cleanup first") # TODO prompt here
-	  show_in_explorer renamed_being_transferred_dir
-	end
+	  if Dir[renamed_being_transferred_dir + '/*'].length > 0 && Dir[local_drop_here_to_save_dir + '/*'].length == 0
+	    if show_select_buttons_prompt("appears there was an interrupted transfer, would you like to restart it?") == :yes
+		  FileUtils.rmdir local_drop_here_to_save_dir		  
+          FileUtils.mv renamed_being_transferred_dir, local_drop_here_to_save_dir
+		  return
+		end
+	  end
+	end 
+	# TODO prompt delete?
+    SimpleGuiCreator.show_message("warning, dirty temp dir #{renamed_being_transferred_dir} please cleanup first?")
+	show_in_explorer renamed_being_transferred_dir
   end  
+  
+  attr_reader :local_drop_here_to_save_dir
   
   def wait_for_incoming_files_and_rename_entire_dir  
 	if @prompt_before_uploading
 	  @prompt_before_uploading.call
 	end	
     assert !File.directory?(renamed_being_transferred_dir) # should have been cleaned up already [!]...
-    FileUtils.mv @local_drop_here_to_save_dir, renamed_being_transferred_dir
-    Dir.mkdir @local_drop_here_to_save_dir # recreate it
+    FileUtils.mv local_drop_here_to_save_dir, renamed_being_transferred_dir
+    Dir.mkdir local_drop_here_to_save_dir # recreate it
+  end
+  
+  def old_lock_files_this_box
+    Dir["#{@dropbox_root_local_dir}/synchronization/request_#{Socket.gethostname}_*.lock"].reject{|f| f.contain? Process.pid.to_s}
   end
   
   def this_process_lock_file
@@ -100,6 +118,11 @@ class IncomingCopier
   
   def wait_if_already_has_lock_files
     raise 'double locking confusion?' if File.exist? this_process_lock_file
+	if old_lock_files_this_box.length > 0
+	  if show_select_buttons_prompt("found some apparent old lock files from this box, they'r eprobably orphaned, delete them?\n#{old_lock_files_this_box.join(', ')}") == :yes
+	    old_lock_files_this_box.each{|f| File.delete(f) }
+	  end
+	end
     while Dir[lock_dir + '/*'].length > 0
       sleep!('wait_if_already_has_lock_files' + Dir[lock_dir + '/*'].join(' '))
     end
@@ -172,7 +195,8 @@ class IncomingCopier
         # avoid jruby 7046 for large files...
         # FileUtils.cp filename, new_subdir
         cmd = %!copy "#{filename.gsub('/', "\\")}" "#{new_subdir.gsub('/', "\\")}" > NUL 2>&1!
-        assert system(cmd)     
+        assert system(cmd)
+        sleep('copy_all_files_over', 0) # status update :)		
 		sum_transferred += File.size(new_subdir + '/' + File.filename(filename)) # getting a size now should be safe, shouldn't it?
       else
         assert File.directory?(filename)        
