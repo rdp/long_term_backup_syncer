@@ -15,6 +15,7 @@ describe IncomingCopier do
     FileUtils.rm_rf 'test_dir'
     Dir.mkdir 'test_dir'
     FileUtils.rm_rf 'test_dir.being_transferred'
+	raise if File.directory? 'test_dir.being_transferred' # would imply unclosed handle...
     FileUtils.rm_rf 'dropbox_root_dir'
     FileUtils.rm_rf 'longterm_storage'
     Dir.mkdir 'dropbox_root_dir'
@@ -357,7 +358,7 @@ describe IncomingCopier do
 	  end	  
 	  
 	  it 'should do a full transfer with pieces' do
-		#@subject.quiet_mode = false
+		@subject.quiet_mode = false
         create_a_few_files_in_to_transfer_dir true
 	    assert !File.exist?(@subject.longterm_storage_dir + '/subdir/big_file') # sanity check test		
         t = Thread.new { @subject.go_single_transfer_out }
@@ -370,7 +371,9 @@ describe IncomingCopier do
 		assert @subject.previous_you_can_go_for_it_size_file =~ /recombinate_ok/ # last piece is an end of group marker...
 	  end
 	  
-	  it 'should be able to do big transfers one after another...'
+	  it 'should have a unit test to be able to do big transfers one after another...'
+	  
+	  it 'should fail if file sizes dont match up for recombo'
 	
 	end
 

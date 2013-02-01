@@ -90,7 +90,6 @@ class IncomingCopier
 	    current_handle.close
 		size = File.size(incoming_filename)
 		assert size == previous_total_size
-		p 'closing recombo file' + previous_name
 	    previous_number = nil
 	    previous_name = nil
 	    current_handle = nil
@@ -101,6 +100,8 @@ class IncomingCopier
 	
 	assert current_handle == nil # should have been closed...
 	filenames.each{|f| File.delete f} # don't want the old partial files anymore...
+	ensure
+	  current_handle.close if current_handle
   end
   
   attr_accessor :extra_stuff_for_done_file # for multiple instances, in unit tests, to be able to differentiate themselves in stop file name

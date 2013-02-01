@@ -93,7 +93,9 @@ class IncomingCopier
     if @prompt_before_uploading
       @prompt_before_uploading.call
     end    
-    assert !File.directory?(renamed_being_transferred_dir) # should have been cleaned up already [!]...
+    if File.directory?(renamed_being_transferred_dir) # should have been cleaned up already [!]...
+	  raise "renamed_being_transferred_dir already exists? #{renamed_being_transferred_dir}"
+	end
     FileUtils.mv local_drop_here_to_save_dir, renamed_being_transferred_dir
     Dir.mkdir local_drop_here_to_save_dir # recreate it
   end
