@@ -125,10 +125,30 @@ synchro_time = 130 # seconds for a trivial lock file to propagate to all clients
 	end
   end
 }
-  
-@t1 = Thread.new { loop { @subject.go_single_transfer_out } }
 
-@t2 = Thread.new { loop { @subject.go_single_transfer_in } }
+@subject.send_updates_here = proc { |status|
+  a.elements[:current_status].text = status
+}
+  
+@t1 = Thread.new { 
+  begin
+  loop { 
+    @subject.go_single_transfer_out 
+  } 
+  rescue => e
+    show_message "thread died #{e} #{e.backtrace.join("\n")}"
+  end
+}
+
+@t2 = Thread.new { 
+  begin
+  loop { 
+    @subject.go_single_transfer_in 
+  } 
+  rescue => e
+    show_message "thread2 died #{e}  #{e.backtrace.join("\n")}"
+  end
+}
 
 t3 = Thread.new { 
   loop {

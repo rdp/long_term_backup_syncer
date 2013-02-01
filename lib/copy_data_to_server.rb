@@ -25,6 +25,7 @@ class IncomingCopier
   attr_accessor :sleep_time
   attr_reader :longterm_storage_dir
   attr_accessor :prompt_before_uploading
+  attr_accessor :send_updates_here
   attr_reader :local_drop_here_to_save_dir
   attr_accessor :quiet_mode
   attr_accessor :total_client_size
@@ -41,9 +42,12 @@ class IncomingCopier
     "#{@dropbox_root_local_dir}/backup_syncer/track_which_clients_are_done_dir"
   end
   
-  def sleep!(output_char, sleep_time=@sleep_time)
+  def sleep!(output_message, sleep_time=@sleep_time)
     sleep sleep_time
-    print output_char, ' ' unless quiet_mode
+	if send_updates_here
+	  send_updates_here.call output_message
+	end
+    print output_message, ' ' unless quiet_mode
   end
   
   def files_incoming(use_temp_renamed_local_dir = false)
@@ -173,12 +177,13 @@ class IncomingCopier
     start_time = Time.now
     while ((elapsed_time = Time.now - start_time) < @synchro_time) && !File.exist?('pretend_lock_files_have_already_stabilized') # speed up IT testing
       if !have_lock?
-        delete_lock_file # 2 people requested the lock, so both give up (or possibly just this 1 give up)
+        delete_lock_file # 2 people requested the lock, so both give up (or possibly just this 1 gives up, hopefully thread safe)
         return false
       else
         sleep!("wait_for_lock_files_to_stabilize #{elapsed_time} < #{@synchro_time}")
       end
     end
+	sleep!("lock obtained/locked!", 0)
     true
   end
   
@@ -210,13 +215,14 @@ class IncomingCopier
 		pieces << piece_filename
 	  end
 	end
-    FileUtils.rm filename  
+    FileUtils.rm filename # I guess it's safe since we have all the pieces at least, and if we restart, it should still recombine them...
 	pieces
   end
   
   def split_up_too_large_of_files
     all_pieces = [] # for unit tests
     for potentially_big_file in files_incoming(true)
+	  raise "dirty old partial file" if potentially_big_file =~ /___piece_/ # that would mean dirty..
 	  if File.size(potentially_big_file) > @dropbox_size
 	    all_pieces += split_up_file(potentially_big_file)
 	  end
