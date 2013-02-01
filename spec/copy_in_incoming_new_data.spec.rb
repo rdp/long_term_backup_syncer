@@ -322,18 +322,22 @@ describe IncomingCopier do
 	    Dir.mkdir 'test_dir.being_transferred'
 	    File.write('test_dir.being_transferred/big_file', 'a'*2500)
 		@subject.split_up_too_large_of_files
-		assert File.size('test_dir.being_transferred/big_file___piece_0_of_2_total_size_2500') == 1000
-		assert File.size('test_dir.being_transferred/big_file___piece_2_of_2_total_size_2500') == 500
+		md5 = Digest::MD5.hexdigest('a'*2500)
+		assert File.size("test_dir.being_transferred/big_file___piece_0_of_2_total_size_2500_md5_#{md5}") == 1000
+		assert File.size("test_dir.being_transferred/big_file___piece_2_of_2_total_size_2500_md5_#{md5}") == 500
 		assert !File.exist?('test_dir.being_transferred/big_file')
 	  end
 	  
 	  it 'should combine the files when done' do
-	    File.write('longterm_storage/big_file___piece_0_of_1_total_size_3333', 'a'*1111)
-	    File.write('longterm_storage/big_file___piece_1_of_1_total_size_3333', 'a'*2222)
-	    @subject.recombinate_files_split_piece_wise ['longterm_storage/big_file___piece_1_of_1_total_size_3333', 'longterm_storage/big_file___piece_0_of_1_total_size_3333']
+	    md5 = Digest::MD5.hexdigest('a'*3333) # "edcec0614199d2bd452fce368aa82238" is right
+		files = ["longterm_storage/big_file___piece_1_of_1_total_size_3333_md5_#{md5}", "longterm_storage/big_file___piece_0_of_1_total_size_3333_md5_#{md5}"]
+	    File.write(files[0], 'a'*1111)
+	    File.write(files[1], 'a'*2222)
+	    @subject.recombinate_files_split_piece_wise files
 		File.size('longterm_storage/big_file').should == 3333
-		assert !File.exist?('longterm_storage/big_file___piece_0_of_1_total_size_3333')
-		assert !File.exist?('longterm_storage/big_file___piece_1_of_1_total_size_3333')
+		for file in files
+		  assert !File.exist?(file)
+		end
 	  end
 	  
 	  it 'should combine files that have over 10 pieces, and multiple files same time' do
@@ -341,7 +345,7 @@ describe IncomingCopier do
 	    File.write('test_dir.being_transferred/big_file', 'a'*50_050)
 	    File.write('test_dir.being_transferred/abig_file', 'b'*50_051)
 	    File.write('test_dir.being_transferred/2big_file', 'c'*50_052)
-	    pieces = @subject.split_up_too_large_of_files # lazy testing
+	    pieces = @subject.split_up_too_large_of_files # lazy testing setup
 		@subject.recombinate_files_split_piece_wise pieces
 		File.read('test_dir.being_transferred/big_file').should == 'a'*50_050
 		File.read('test_dir.being_transferred/abig_file').should == 'b'*50_051
@@ -373,10 +377,16 @@ describe IncomingCopier do
 	  it 'should have a unit test to be able to do big transfers one after another...'
 	  
 	  it 'should fail if file sizes dont match up for recombo' do
-	    File.write('longterm_storage/big_file___piece_0_of_1_total_size_3334', 'a'*1111) # wrong numbers...
-	    File.write('longterm_storage/big_file___piece_1_of_1_total_size_3334', 'a'*2222)
-	    proc {@subject.recombinate_files_split_piece_wise ['longterm_storage/big_file___piece_1_of_1_total_size_3334', 'longterm_storage/big_file___piece_0_of_1_total_size_3334']}.should raise_exception
-  
+	    File.write('longterm_storage/big_file___piece_0_of_1_total_size_3334_md5_xx', 'a'*1111) # wrong size
+	    File.write('longterm_storage/big_file___piece_1_of_1_total_size_3334_md5_xx', 'a'*2222)
+	    proc {@subject.recombinate_files_split_piece_wise ['longterm_storage/big_file___piece_1_of_1_total_size_3334_md5_xx', 'longterm_storage/big_file___piece_0_of_1_total_size_3334_md5_xx']}.should raise_exception /size.*mismatch/  
+	  end
+	  
+	  it 'should fail on md5 mismatch' do
+	    files = ['longterm_storage/big_file___piece_0_of_1_total_size_3333_md5_xx', 'longterm_storage/big_file___piece_1_of_1_total_size_3333_md5_xx']
+	    File.write(files[0], 'a'*1111)
+	    File.write(files[1], 'a'*2222)
+	    proc {@subject.recombinate_files_split_piece_wise files}.should raise_exception /md5.*mismatch/  	  
 	  end
 	
 	end

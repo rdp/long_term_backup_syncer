@@ -49,11 +49,12 @@ class IncomingCopier
   end
   
   def recombinate_files_split_piece_wise filenames
-    regex = /^(.+)___piece_(\d+)_of_(\d+)_total_size_(\d+)/
+    regex = /^(.+)___piece_(\d+)_of_(\d+)_total_size_(\d+)_md5_(.*)$/
     filenames = filenames.select{|f| f =~ regex}.sort_by{|f| f =~ regex; [$1, Integer($2)]}
 	previous_number = nil
 	previous_name = nil
 	previous_total_size = nil
+	previous_md5 = nil
 	current_handle = nil
 	current_total_pieces_number = nil
 	for filename in filenames	  	
@@ -63,6 +64,7 @@ class IncomingCopier
       this_piece_number = Integer($2)
 	  total_pieces_number = Integer($3)
 	  total_size = Integer($4)
+	  file_md5 = $5
 	  assert total_pieces_number > 0 # that would be unexpected...
 	  
 	  if current_handle
@@ -70,12 +72,16 @@ class IncomingCopier
 		assert this_piece_number == previous_number + 1
 		assert incoming_filename == previous_name
 		assert total_size == previous_total_size
+		assert file_md5 == previous_md5
 		assert total_pieces_number == current_total_pieces_number # should always match..
 		previous_number = this_piece_number
+		# rest don't need to change...
 	  else
 	    assert this_piece_number == 0
 		assert previous_number == nil
 		previous_number = 0
+		assert previous_md5 == nil
+		previous_md5 = file_md5
 		assert previous_name == nil
 		assert previous_total_size == nil
 		assert current_total_pieces_number == nil
@@ -88,8 +94,15 @@ class IncomingCopier
 	  current_handle.syswrite(File.binread(filename))
 	  if total_pieces_number == this_piece_number
 	    current_handle.close
+		current_handle = nil
 		size = File.size(incoming_filename)
-		assert size == previous_total_size
+		if size != previous_total_size
+		  raise "size of recombo file mismatch?"
+		end
+		if (md5 = Digest::MD5.file(incoming_filename)) != previous_md5
+		  raise "md5 recombo mismatch? #{md5} #{previous_md5}"
+		end
+		previous_md5 = nil
 	    previous_number = nil
 	    previous_name = nil
 	    current_handle = nil

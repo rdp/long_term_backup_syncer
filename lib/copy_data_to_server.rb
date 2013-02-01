@@ -191,15 +191,17 @@ class IncomingCopier
     end
   end
   
+  require 'digest/md5'
   def split_up_file filename
     size = 0
 	file_size = File.size filename
+	file_md5 = Digest::MD5.file(filename)
 	pieces_total = file_size / @dropbox_size
 	pieces = []
 	file_count = 0
 	File.open(filename, 'rb') do |from_file|
 	  while size < file_size
-	    piece_filename = "#{filename}___piece_#{file_count}_of_#{pieces_total}_total_size_#{file_size}"
+	    piece_filename = "#{filename}___piece_#{file_count}_of_#{pieces_total}_total_size_#{file_size}_md5_#{file_md5}"
 	    File.open(piece_filename, 'wb') do |to_file|
 	      to_file.syswrite(from_file.sysread(@dropbox_size))
 		  size += @dropbox_size
