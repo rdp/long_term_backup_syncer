@@ -1,24 +1,19 @@
 = Yes do =
 
-test it between 2 computers at work
+split too large of files
   
 = maybe =
 
-= someday =
+unit test: to 2 clients should work
 
-GUI statuses better/at all...
+= if I ever distribute =
 
-some ability to like "let uncle jim upload you a big folder somehow" that you will preserve in your system  
+GUI statuses at all...
 
-new icons
+new/real icons
 
-prompt to cleanup old transfer "do you still want to transfer them?"
-
-make the long dir name less confusing
-
-it should be able to capture to 2 places, same computer
-
-it "should be locked by somebody else" if there's a transfer request
+no dual folder stuff, you just drop it into your local preservation folder, it goes from there (renamed it to .in_process perhaps?)
+  and skips you copying it in to a local folder :P
 
 innosetup
 
@@ -26,27 +21,36 @@ pick a new name
   "fake real" website
   distributable
 
-combine the gdrive folders into subfolders
+warn on google drive yikes!
 
-assert they "have" 3G they can use to give to gdrive...
+"daemonize" mode icon vs. setup
+
+= someday/never =
+
+synchronize "a full folder, with changes"
+
+some ability to like "let uncle jim upload you a big folder somehow" pubically that you preserve in your system
+
+prompt to cleanup old transfer "do you still want to transfer them?"
+
+it should be able to capture to 2 archival places, same computer
+
+assert it "should be locked by somebody else" if there's a transfer request
+
+assert they "have" 3G or whatever they can use to give to gdrive...
 
 "this many are currently online"
   "each is doing this..."
 
-  warn on old lock files?
-  delete them for current host when I come up?
-  
 warn on too many files "you should really be zipping this, buddy!"
-
-"daemonize" mode icon vs. setup
+  or ideally, warn if zipping it would be quite helpful (vs. not)
 
 auto empty gdrive trash [etc?]
+  yeah....right...
   
 cleanup shutdown code it raises an exception?
 
 better folders, don't re-mkdir them if they don't exist
-
-prompt for "gdrive found ok?" for init
 
 gui show status updates, also warn when one client appears to be lagging
 
@@ -63,11 +67,9 @@ it should capture names of each capture point, make them editable, share the sum
 
 it should have one way of allowing "public sync" (like anonymous?)
 
-use some type of system binding to "be notified" when new files appear
+use some type of system awesome auto notification binding to "be notified" when new files appear
 
-warn if it appears it will eventually plow something
-
-use registry to "auto determine" your gdrive home, etc.
+use registry to "auto determine" your dropbox home, etc.
 
 NB that I don't think XXX has ability to "add from it from anywhere" or possibly keep vanilla copies around...
   tell them
@@ -81,8 +83,6 @@ keep a large YAML file of all files...
   maybe on every client [?]
 
 it can "upload to a new candidate" that is added
-
-split too large of files
 
 auto...submit them to youtube, too?
 

@@ -272,6 +272,11 @@ describe IncomingCopier do
       assert File.exist?(@subject.longterm_storage_dir + '/subdir/b') # subdir with file
       assert File.directory?(@subject.longterm_storage_dir + '/subdir2') # empty dir -- let it fail for now :)
     end
+	
+	it 'should do full transfer with 2 clients' do
+	    subject2 = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 1000, 1
+
+	end
 
   end
 
