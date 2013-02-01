@@ -1,14 +1,18 @@
 = Yes do =
-
-split too large of files
   
 = maybe =
 
 = if I ever want to distribute =
 
+general md5 of "everything" so that you know the repo's are all in sync
+
+change verbiage to 'repo'
+
+fix/do the minimize to tray button
+
 right click on folder "sync it!"
 
-the 2 GUI statuses...
+add the 2 GUI statuses...
 
 new/real icons
 
@@ -21,9 +25,7 @@ pick a new name
   "fake real" website
   distributable
 
-warn on using google drive yikes!
-
-"daemonize" mode vs. setup
+"daemonize" startup mode
 
 = someday/never =
 
