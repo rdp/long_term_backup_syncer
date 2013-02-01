@@ -53,7 +53,7 @@ class IncomingCopier
 	if File.exist? path
 	  raise "file already exists #{path}?!"
 	end
-    p "client touching done file #{path}"
+    sleep! "client touching done file #{path}", 0
     FileUtils.touch path
   end
   

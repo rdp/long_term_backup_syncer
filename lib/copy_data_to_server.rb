@@ -192,7 +192,7 @@ class IncomingCopier
     current_group = []
     current_sum = 0    
     files_to_chunk = files_incoming(true).sort
-    raise 'no files?' if files_to_chunk.empty?
+    raise 'no files huh?' if files_to_chunk.empty?
     files_to_chunk.each{|f|
       if File.file? f
         file_size = File.size f
@@ -281,9 +281,9 @@ class IncomingCopier
   
   def wait_for_all_clients_to_copy_files_out
     while (got = client_done_copying_files.length) != @total_client_size
-      sleep!("wait_for_all_clients_to_copy_files_out #{got} < #{@total_client_size}")
+      sleep! "wait_for_all_clients_to_copy_files_out #{got} < #{@total_client_size}"
     end
-	p "detected all clients are done, deleting their notification files"
+	sleep! "detected all clients are done, deleting their notification files", 0
     for file in client_done_copying_files
       File.delete file
     end

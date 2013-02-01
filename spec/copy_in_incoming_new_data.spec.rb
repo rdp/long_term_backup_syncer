@@ -309,7 +309,8 @@ describe IncomingCopier do
 	
 	context 'should transfer files that are too big for a single go' do
 	  it 'should copy the file in, as a piece' do
-	  
+	    File.write('test_dir/big_file', 'a'*1001)
+	    @subject.split_to_chunks.should
 	  end
 	  
 	  it 'should copy the file out, as a piece'
