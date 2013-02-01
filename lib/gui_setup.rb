@@ -115,11 +115,15 @@ synchro_time = 130 # seconds for a trivial lock file to propagate to all clients
 @subject.prompt_before_uploading = proc {
   got = :no
   while got == :no
-    got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)}.join(', ')},\n would you like to do that now, or wait\n(to put more files there or rename some first)?", :yes => "Now, I'm ready!", :no => "wait")
-	if got == :no
-      sleep 10
+    begin
+	  got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)}.join(', ')},\n would you like to do that now, or wait\n(to put more files there or rename them first)?", :yes => "Now, the files are ready!", :no => "wait")
+	rescue => e
+	  # cancel or X
 	end
-  end  
+	if got == :no
+      sleep 30
+	end
+  end
 }
   
 @t1 = Thread.new { loop { @subject.go_single_transfer_out } }
