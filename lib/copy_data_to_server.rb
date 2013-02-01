@@ -190,26 +190,32 @@ class IncomingCopier
   def split_up_file filename
     size = 0
 	file_size = File.size filename
-	pieces = file_size / @dropbox_size
+	pieces_total = file_size / @dropbox_size
+	pieces = []
 	file_count = 0
 	File.open(filename, 'rb') do |from_file|
 	  while size < file_size
-	    File.open("#{filename}___piece_#{file_count}_of_#{pieces}", 'wb') do |to_file|
+	    piece_filename = "#{filename}___piece_#{file_count}_of_#{pieces_total}"
+	    File.open(piece_filename, 'wb') do |to_file|
 	      to_file.syswrite(from_file.sysread(@dropbox_size))
 		  size += @dropbox_size
 		  file_count += 1
 	    end
+		pieces << piece_filename
 	  end
 	end
     FileUtils.rm filename  
+	pieces
   end
   
   def split_up_too_large_of_files
+    all_pieces = [] # for unit tests
     for potentially_big_file in files_incoming(true)
 	  if File.size(potentially_big_file) > @dropbox_size
-	    split_up_file potentially_big_file
+	    all_pieces += split_up_file(potentially_big_file)
 	  end
 	end
+	all_pieces
   end
   
   def split_to_chunks

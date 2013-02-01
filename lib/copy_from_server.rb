@@ -50,7 +50,7 @@ class IncomingCopier
   
   def recombinate_files_split_piece_wise filenames
     regex = /^(.+)___piece_(\d+)_of_(\d+)/
-    filenames = filenames.select{|f| f =~ regex}.sort
+    filenames = filenames.select{|f| f =~ regex}.sort_by{|f| f =~ regex; [$1, Integer($2)]}
 	previous_number = nil
 	previous_name = nil
 	current_handle = nil
@@ -67,6 +67,7 @@ class IncomingCopier
 		assert this_piece_number == previous_number + 1
 		assert incoming_filename == previous_name
 		assert total_pieces_number == current_total_pieces_number # should always match..
+		previous_number = this_piece_number
 	  else
 	    assert this_piece_number == 0
 		assert previous_number == nil
@@ -74,7 +75,6 @@ class IncomingCopier
 		assert previous_name == nil
 		assert current_total_pieces_number == nil
 		previous_name = incoming_filename
-		p 'opening', incoming_filename
 		current_handle = File.open(incoming_filename, 'ab') # append binary
 		current_total_pieces_number = total_pieces_number
 	  end
@@ -90,7 +90,7 @@ class IncomingCopier
     end
 	
 	assert current_handle == nil # should have been closed...
-	filenames.each{|f| File.delete f} # don't want the old partial files...
+	filenames.each{|f| File.delete f} # don't want the old partial files anymore...
   end
   
   attr_accessor :extra_stuff_for_done_file # for multiple instances, in unit tests, to be able to differentiate themselves in stop file name

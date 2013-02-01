@@ -332,7 +332,17 @@ describe IncomingCopier do
 		assert !File.exist?('longterm_storage/big_file___piece_1_of_1')
 	  end
 	  
-	  it 'should combine files that have over 10 pieces, and multiple files same time'
+	  it 'should combine files that have over 10 pieces, and multiple files same time' do
+	    Dir.mkdir 'test_dir.being_transferred'
+	    File.write('test_dir.being_transferred/big_file', 'a'*50_050)
+	    File.write('test_dir.being_transferred/abig_file', 'b'*50_051)
+	    File.write('test_dir.being_transferred/2big_file', 'c'*50_052)
+	    pieces = @subject.split_up_too_large_of_files
+		@subject.recombinate_files_split_piece_wise pieces
+		File.read('test_dir.being_transferred/big_file').should == 'a'*50_050
+		File.read('test_dir.being_transferred/abig_file').should == 'b'*50_051
+		File.read('test_dir.being_transferred/2big_file').should == 'c'*50_052
+	  end
 	  
 	  it 'should raise if missing pieces on recombinate time'
 	  
