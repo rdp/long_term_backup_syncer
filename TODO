@@ -4,11 +4,9 @@ split too large of files
   
 = maybe =
 
-unit test: to 2 clients should work
+= if I ever want to distribute =
 
-= if I ever distribute =
-
-GUI statuses at all...
+the 2 GUI statuses...
 
 new/real icons
 
@@ -21,11 +19,13 @@ pick a new name
   "fake real" website
   distributable
 
-warn on google drive yikes!
+warn on using google drive yikes!
 
-"daemonize" mode icon vs. setup
+"daemonize" mode vs. setup
 
 = someday/never =
+
+ability to add a client "just transfer to it" what it requests, etc.
 
 synchronize "a full folder, with changes"
 

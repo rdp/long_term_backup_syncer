@@ -262,6 +262,7 @@ describe IncomingCopier do
     end
     
     it 'should do full client receive loop' do
+	  # use the same client sending it to itself.  which is actually what we do in production too LOL
       create_a_few_files_in_to_transfer_dir
       assert !File.exist?(@subject.longterm_storage_dir + '/a') # sanity check test
       t = Thread.new { @subject.go_single_transfer_out }
@@ -273,9 +274,48 @@ describe IncomingCopier do
       assert File.directory?(@subject.longterm_storage_dir + '/subdir2') # empty dir -- let it fail for now :)
     end
 	
+	def dir_size dir
+	  sum = 0
+	  Dir[dir + '/**/*'].each{|f|
+	    if File.file? f
+		  sum += File.size(f)
+		else
+		  sum += 1 # empty dir count show up in this number, too :)
+		end
+	  }
+	  sum	  
+	end
+	
 	it 'should do full transfer with 2 clients' do
-	    subject2 = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 1000, 1
-
+	  @subject.total_client_size = 3 # 2 clients, plus self
+      recipient1 = IncomingCopier.new 'test_dir1', 'dropbox_root_dir', 'longterm_storage1', 0.1, 0.5, 1000, 3 # the ending 3 shouldn't matter here...
+	  recipient2 = IncomingCopier.new 'test_dir2', 'dropbox_root_dir', 'longterm_storage2', 0.1, 0.5, 1000, 3
+	  recipient1.quiet_mode = true
+	  recipient2.quiet_mode = true
+	  recipient1.extra_stuff_for_done_file = 'recipient1' # so they'll have distinct touch files
+	  recipient2.extra_stuff_for_done_file = 'recipient2'
+	  create_a_few_files_in_to_transfer_dir 
+      t = Thread.new { @subject.go_single_transfer_out } # starts serving files out...
+	  t1 = Thread.new { 2.times { recipient1.go_single_transfer_in } }
+	  t2 = Thread.new { 2.times { recipient2.go_single_transfer_in } }
+	  # don't need a thread for one of them...
+	  2.times { @subject.go_single_transfer_in }
+	  t.join
+	  t1.join
+	  dir_size('longterm_storage').should == 1003
+	  dir_size('longterm_storage1').should == 1003
+	  dir_size('longterm_storage2').should == 1003	  
+	end
+	
+	context 'should transfer files that are too big for a single go' do
+	  it 'should copy the file in, as a piece' do
+	  
+	  end
+	  
+	  it 'should copy the file out, as a piece'
+	  it 'should combine the files when done'
+	  it 'should mention that its a piece somehow'	  
+	
 	end
 
   end

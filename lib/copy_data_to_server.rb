@@ -19,11 +19,13 @@ class IncomingCopier
     @prompt_before_uploading = nil
   end
   
+  # most of these for unit tests...
   attr_accessor :sleep_time
   attr_reader :longterm_storage_dir
   attr_accessor :prompt_before_uploading
   attr_reader :local_drop_here_to_save_dir
   attr_accessor :quiet_mode
+  attr_accessor :total_client_size
 
   def dropbox_temp_transfer_dir
     "#{@dropbox_root_local_dir}/backup_syncer/temp_transfer_big_dir"
@@ -106,7 +108,7 @@ class IncomingCopier
     @previous_go_for_it_filename || 'fake for unit tests'
   end
   
-  def next_you_can_go_for_it_after_size_file(current_chunk_size)
+  def next_you_can_go_for_it_after_size_file current_chunk_size
     # use filename instead of size, to make it synchronously created with its contents :)
     @previous_go_for_it_filename = "#{lock_dir}/begin_transfer_courtesy_#{Socket.gethostname}_#{Process.pid}_#{@transfer_count += 1}_#{current_chunk_size}"
   end

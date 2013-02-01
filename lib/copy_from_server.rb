@@ -46,8 +46,13 @@ class IncomingCopier
     assert transferred == size_expected
   end
   
+  attr_accessor :extra_stuff_for_done_file
+  
   def create_done_copying_files_to_local_file
-    path = track_when_client_done_dir + "/done_with_#{File.filename @current_transfer_file}_#{Socket.gethostname}"
+    path = track_when_client_done_dir + "/done_with_#{File.filename @current_transfer_file}_#{Socket.gethostname}#{extra_stuff_for_done_file}"
+	if File.exist? path
+	  raise "file already exists #{path}?!"
+	end
     p "client touching done file #{path}"
     FileUtils.touch path
   end
