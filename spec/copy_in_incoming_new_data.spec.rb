@@ -314,7 +314,7 @@ describe IncomingCopier do
 	    proc { @subject.split_to_chunks }.should raise_exception(/we should have already split up/)
 	  end
 	  
-	  it 'should split a file up' do
+	  it 'should split a file up into pieces' do
 	    Dir.mkdir 'test_dir.being_transferred'
 	    File.write('test_dir.being_transferred/big_file', 'a'*2500)
 		@subject.split_up_too_large_of_files
@@ -323,9 +323,20 @@ describe IncomingCopier do
 		assert !File.exist?('test_dir.being_transferred/big_file')
 	  end
 	  
-	  it 'should copy the file out, as a piece'
-	  it 'should combine the files when done'
-	  it 'should mention that its a piece somehow'	  
+	  it 'should combine the files when done' do
+	    File.write('longterm_storage/big_file___piece_0_of_1', 'a'*1111)
+	    File.write('longterm_storage/big_file___piece_1_of_1', 'a'*2222)
+	    @subject.recombinate_files_split_piece_wise ['longterm_storage/big_file___piece_1_of_1', 'longterm_storage/big_file___piece_0_of_1']
+		File.size('longterm_storage/big_file').should == 3333
+		assert !File.exist?('longterm_storage/big_file___piece_0_of_1')
+		assert !File.exist?('longterm_storage/big_file___piece_1_of_1')
+	  end
+	  
+	  it 'should combine files that have over 10 pieces, and multiple files same time'
+	  
+	  it 'should raise if missing pieces on recombinate time'
+	  
+	  it 'should do a full transfer with pieces'
 	
 	end
 

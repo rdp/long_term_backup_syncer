@@ -41,12 +41,59 @@ class IncomingCopier
   end  
   
   def copy_files_from_dropbox_to_local_permanent_storage size_expected
-    # FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir # avoid jruby file size bug
-    transferred = copy_files_over Dir[dropbox_temp_transfer_dir + '/**/*'], dropbox_temp_transfer_dir, @longterm_storage_dir, 'from dropbox'
+    # FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir # we want to have the glob...
+	files_to_copy = Dir[dropbox_temp_transfer_dir + '/**/*']
+    transferred = copy_files_over files_to_copy, dropbox_temp_transfer_dir, @longterm_storage_dir, 'from dropbox'
     assert transferred == size_expected
+	recombinate_files_split_piece_wise files_to_copy
   end
   
-  attr_accessor :extra_stuff_for_done_file
+  def recombinate_files_split_piece_wise filenames
+    regex = /^(.+)___piece_(\d+)_of_(\d+)/
+    filenames = filenames.select{|f| f =~ regex}.sort
+	previous_number = nil
+	previous_name = nil
+	current_handle = nil
+	current_total_pieces_number = nil
+	for filename in filenames	  	
+	  filename =~ regex
+	  incoming_filename = $1
+      this_piece_number = Integer($2)
+	  total_pieces_number = Integer($3)
+	  assert total_pieces_number > 0 # that would be unexpected...
+	  
+	  if current_handle
+	    assert this_piece_number > 0
+		assert this_piece_number == previous_number + 1
+		assert incoming_filename == previous_name
+		assert total_pieces_number == current_total_pieces_number # should always match..
+	  else
+	    assert this_piece_number == 0
+		assert previous_number == nil
+		previous_number = 0
+		assert previous_name == nil
+		assert current_total_pieces_number == nil
+		previous_name = incoming_filename
+		p 'opening', incoming_filename
+		current_handle = File.open(incoming_filename, 'ab') # append binary
+		current_total_pieces_number = total_pieces_number
+	  end
+	  
+	  current_handle.syswrite(File.binread(filename))
+	  if total_pieces_number == this_piece_number
+	    current_handle.close
+	    previous_number = nil
+	    previous_name = nil
+	    current_handle = nil
+		current_total_pieces_number = nil
+	  end
+    end
+	
+	assert current_handle == nil # should have been closed...
+	filenames.each{|f| File.delete f} # don't want the old partial files...
+  end
+  
+  attr_accessor :extra_stuff_for_done_file # for multiple instances, in unit tests, to be able to differentiate themselves in stop file name
   
   def create_done_copying_files_to_local_file
     path = track_when_client_done_dir + "/done_with_#{File.filename @current_transfer_file}_#{Socket.gethostname}#{extra_stuff_for_done_file}"
