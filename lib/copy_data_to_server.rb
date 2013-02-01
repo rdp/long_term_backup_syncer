@@ -210,8 +210,13 @@ class IncomingCopier
 	  while size < file_size
 	    piece_filename = "#{filename}___piece_#{file_count}_of_#{pieces_total}_total_size_#{file_size}_md5_#{file_md5}"
 	    File.open(piece_filename, 'wb') do |to_file|
-	      to_file.syswrite(from_file.sysread(@dropbox_size))
-		  size += @dropbox_size
+		  local_chunk_size = 1024*1024*128 # 128 MB reads, to avoid running out of Heap if you read 2.5GB at a time...
+		  amount_read = 0
+		  while(amount_read < @dropbox_size && !from_file.eof?)
+		    amount_to_read = [local_chunk_size, @dropbox_size - amount_read].min # try not to go over the dropbox size ever...
+	        amount_read += to_file.write(from_file.read(amount_to_read))
+		  end
+		  size += amount_read
 		  file_count += 1
 	    end
 		pieces << piece_filename
@@ -311,7 +316,7 @@ class IncomingCopier
 	split_up_too_large_of_files
 	chunks = split_to_chunks
 	chunks.each_with_index{|(chunk, size), idx|
-	  sleep(:server, "copying in chunk #{idx+1} of #{chunks.size}")
+	  sleep!(:server, "copying in chunk #{idx+1} of #{chunks.size}")
 	  do_full_chunk_to_clients chunk, size, (idx == (chunks.size - 1))
     }
   end
