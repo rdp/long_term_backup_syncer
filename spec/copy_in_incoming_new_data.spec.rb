@@ -311,15 +311,16 @@ describe IncomingCopier do
 	  it 'should copy the file in, as a piece' do
 	    Dir.mkdir 'test_dir.being_transferred'
 	    File.write('test_dir.being_transferred/big_file', 'a'*1001)
-	    @subject.split_to_chunks.should == [[[File.expand_path('test_dir.being_transferred/big_file')], 1001]]
+	    proc { @subject.split_to_chunks }.should raise_exception(/we should have already split up/)
 	  end
 	  
 	  it 'should split a file up' do
-	    File.write('test_dir/big_file', 'a'*2500)
-	    @subject.split_up_file('test_dir/big_file')
-		assert File.size('test_dir/big_file___piece_0_of_2') == 1000
-		assert File.size('test_dir/big_file___piece_2_of_2') == 500
-		assert !File.exist?('test_dir/big_file')
+	    Dir.mkdir 'test_dir.being_transferred'
+	    File.write('test_dir.being_transferred/big_file', 'a'*2500)
+		@subject.split_up_too_large_of_files
+		assert File.size('test_dir.being_transferred/big_file___piece_0_of_2') == 1000
+		assert File.size('test_dir.being_transferred/big_file___piece_2_of_2') == 500
+		assert !File.exist?('test_dir.being_transferred/big_file')
 	  end
 	  
 	  it 'should copy the file out, as a piece'

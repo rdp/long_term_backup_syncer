@@ -204,6 +204,14 @@ class IncomingCopier
     FileUtils.rm filename  
   end
   
+  def split_up_too_large_of_files
+    for potentially_big_file in files_incoming(true)
+	  if File.size(potentially_big_file) > @dropbox_size
+	    split_up_file potentially_big_file
+	  end
+	end
+  end
+  
   def split_to_chunks
     out = []
     current_group = []
@@ -216,10 +224,7 @@ class IncomingCopier
       else
         file_size = 0 # count directories as 0 size
       end
-	  if file_size > @dropbox_size
-	    
-	  end
-	  
+	  raise "we should have already split up this file!" if file_size > @dropbox_size
       if file_size + current_sum > @dropbox_size
         out << [current_group, current_sum]
         current_group = [f] # f might be bigger than @dropbox_size...
@@ -269,6 +274,7 @@ class IncomingCopier
   
   def copy_files_in_by_chunks
     sanity_check_clean_and_locked
+	split_up_too_large_of_files
     for chunk, size in split_to_chunks
       copy_chunk_to_dropbox chunk, size
       touch_the_you_can_go_for_it_file size
