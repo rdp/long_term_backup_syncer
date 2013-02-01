@@ -314,6 +314,14 @@ describe IncomingCopier do
 	    @subject.split_to_chunks.should == [[[File.expand_path('test_dir.being_transferred/big_file')], 1001]]
 	  end
 	  
+	  it 'should split a file up' do
+	    File.write('test_dir/big_file', 'a'*2500)
+	    @subject.split_up_file('test_dir/big_file')
+		assert File.size('test_dir/big_file___piece_0_of_2') == 1000
+		assert File.size('test_dir/big_file___piece_2_of_2') == 500
+		assert !File.exist?('test_dir/big_file')
+	  end
+	  
 	  it 'should copy the file out, as a piece'
 	  it 'should combine the files when done'
 	  it 'should mention that its a piece somehow'	  

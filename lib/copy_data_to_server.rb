@@ -187,6 +187,23 @@ class IncomingCopier
     end
   end
   
+  def split_up_file filename
+    size = 0
+	file_size = File.size filename
+	pieces = file_size / @dropbox_size
+	file_count = 0
+	File.open(filename, 'rb') do |from_file|
+	  while size < file_size
+	    File.open("#{filename}___piece_#{file_count}_of_#{pieces}", 'wb') do |to_file|
+	      to_file.syswrite(from_file.sysread(@dropbox_size))
+		  size += @dropbox_size
+		  file_count += 1
+	    end
+	  end
+	end
+    FileUtils.rm filename  
+  end
+  
   def split_to_chunks
     out = []
     current_group = []
@@ -199,11 +216,12 @@ class IncomingCopier
       else
         file_size = 0 # count directories as 0 size
       end
+	  if file_size > @dropbox_size
+	    
+	  end
 	  
       if file_size + current_sum > @dropbox_size
-	    if current_sum > 0
-          out << [current_group, current_sum]
-		end
+        out << [current_group, current_sum]
         current_group = [f] # f might be bigger than @dropbox_size...
         current_sum = file_size # reset current_sum
       else
@@ -214,6 +232,8 @@ class IncomingCopier
     out << [current_group, current_sum] unless current_group.empty? # last group
     out
   end
+  
+  raise unless JRUBY_VERSION >= '1.7.2' # avoid JRUBY-7046 here or there...
   
   def renamed_being_transferred_dir
     @local_drop_here_to_save_dir + '.being_transferred'
@@ -226,12 +246,9 @@ class IncomingCopier
       new_subdir = to_this_dir + '/' + File.dirname(relative_extra_dir)
       FileUtils.mkdir_p new_subdir # I guess we might be able to use some type of *args to FileUtils.cp_r here?
       if(File.file? filename)
-        # avoid jruby 7046 for now
-        # FileUtils.cp filename, new_subdir
-        cmd = %!copy "#{filename.gsub('/', "\\")}" "#{new_subdir.gsub('/', "\\")}" > NUL 2>&1!
-        assert system(cmd)
+        FileUtils.cp filename, new_subdir
         sleep!('copy_files_over' + name, 0) # status update :)        
-        sum_transferred += File.size(new_subdir + '/' + File.filename(filename)) # getting a size now should be safe, shouldn't it?
+        sum_transferred += File.size(new_subdir + '/' + File.filename(filename)) # getting a file size after copy should be safe, shouldn't it?
       else
         assert File.directory?(filename)
         FileUtils.mkdir_p new_subdir + '/' + relative_extra_dir
