@@ -1,17 +1,29 @@
 = Yes do =
 
-split too large of files
+test it at work
+
+then go cuh-razy with it
   
 = maybe =
 
 = if I ever want to distribute =
 
-the 2 GUI statuses...
+general md5 of "everything" so that you know the repo's are all in sync
+
+change verbiage to 'repo'
+
+fix/do the minimize to tray button
+
+right click on a folder "sync it!"
 
 new/real icons
 
 no dual folder stuff, you just drop it into your local preservation folder, it goes from there (renamed it to .in_process perhaps?)
   and skips you copying it in to a local folder :P
+
+double check 15s for static files when they click "ready..."
+  
+update the found file list if they rename things...? sure why not LOL
 
 innosetup
 
@@ -19,9 +31,7 @@ pick a new name
   "fake real" website
   distributable
 
-warn on using google drive yikes!
-
-"daemonize" mode vs. setup
+"daemonize" startup mode
 
 = someday/never =
 

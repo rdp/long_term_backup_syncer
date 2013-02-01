@@ -39,7 +39,7 @@ describe IncomingCopier do
 	@subject.prompt_before_uploading = proc {
 	  got_it = true
 	}
-    @subject.wait_for_incoming_files_and_rename_entire_dir
+    @subject.wait_for_incoming_files_prompt_and_rename_entire_dir
 	assert got_it
     assert File.directory?('test_dir.being_transferred')
     assert File.exist?('test_dir.being_transferred/a')

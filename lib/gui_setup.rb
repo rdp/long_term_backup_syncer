@@ -66,8 +66,12 @@ a.elements[:re_configure].on_clicked {
   shutdown
 }
 
-a.elements[:open_drop_into_folder].on_clicked {
+def reveal_drop_into_folder
   SimpleGuiCreator.show_in_explorer(storage[:drop_into_folder] + '/.')
+end
+
+a.elements[:open_drop_into_folder].on_clicked {
+  reveal_drop_into_folder
 }
 
 a.elements[:open_long_term_folder].on_clicked {
@@ -120,16 +124,46 @@ synchro_time = 130 # seconds for a trivial lock file to propagate to all clients
 @subject.prompt_before_uploading = proc {
   got = :no
   while got == :no
-    got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)}.join(', ')},\n would you like to do that now, or wait\n(to put more files there or rename some first)?", :yes => "Now, I'm ready!", :no => "wait")
-	if got == :no
-      sleep 10
+    begin
+	  got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)}.join(', ')},\n would you like to do that now, or wait\n(to put more files there or rename them first)?", :yes => "Now, the files are all ready!", :no => "reveal files")
+	rescue => e
+	  # cancel or X
 	end
-  end  
+	if got == :no
+	  reveal_drop_into_folder      
+	end
+  end
+}
+
+@subject.send_updates_here = proc { |type, status|
+  if type == :server
+    a.elements[:current_upload_status].text = status
+  elsif type == :client
+    a.elements[:current_download_status].text = status
+  else
+   raise
+  end
 }
   
-@t1 = Thread.new { loop { @subject.go_single_transfer_out } }
+@t1 = Thread.new { 
+  begin
+  loop { 
+    @subject.go_single_transfer_out 
+  } 
+  rescue => e
+    show_message "thread died #{e} #{e.backtrace.join("\n")}"
+  end
+}
 
-@t2 = Thread.new { loop { @subject.go_single_transfer_in } }
+@t2 = Thread.new { 
+  begin
+  loop { 
+    @subject.go_single_transfer_in 
+  } 
+  rescue => e
+    show_message "thread2 died #{e}  #{e.backtrace.join("\n")}"
+  end
+}
 
 t3 = Thread.new { 
   loop {
