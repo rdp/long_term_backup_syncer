@@ -199,10 +199,12 @@ class IncomingCopier
       else
         file_size = 0 # count directories as 0 size
       end
-      raise 'cannot fit that file ever [yet!] ask for it!' if file_size > @dropbox_size
+	  
       if file_size + current_sum > @dropbox_size
-        out << [current_group, current_sum]
-        current_group = [f]
+	    if current_sum > 0
+          out << [current_group, current_sum]
+		end
+        current_group = [f] # f might be bigger than @dropbox_size...
         current_sum = file_size # reset current_sum
       else
         current_group << f
@@ -217,7 +219,7 @@ class IncomingCopier
     @local_drop_here_to_save_dir + '.being_transferred'
   end
   
-  def copy_all_files_over files, relative_to_strip_from_files, to_this_dir, name
+  def copy_files_over files, relative_to_strip_from_files, to_this_dir, name
     sum_transferred = 0
     for filename in files
       relative_extra_dir = filename[(relative_to_strip_from_files.length + 1)..-1] # like "subdir/b"
@@ -228,7 +230,7 @@ class IncomingCopier
         # FileUtils.cp filename, new_subdir
         cmd = %!copy "#{filename.gsub('/', "\\")}" "#{new_subdir.gsub('/', "\\")}" > NUL 2>&1!
         assert system(cmd)
-        sleep!('copy_all_files_over' + name, 0) # status update :)        
+        sleep!('copy_files_over' + name, 0) # status update :)        
         sum_transferred += File.size(new_subdir + '/' + File.filename(filename)) # getting a size now should be safe, shouldn't it?
       else
         assert File.directory?(filename)
@@ -239,14 +241,12 @@ class IncomingCopier
   end
   
   def copy_chunk_to_dropbox chunk, size
-  	if !File.exist? "trust_dropbox" # testing short circuit
-      if Dir[dropbox_temp_transfer_dir + '/*'].length != 0
-        show_in_explorer dropbox_temp_transfer_dir
-        show_message "transfer directory is dirty from a previous run, please clean it up, abd gut ir\bor hit ok and leave stuff in it to abort current transfer (or touch trust_dropbox file)"
-      end
+    if Dir[dropbox_temp_transfer_dir + '/*'].length != 0
+      show_in_explorer dropbox_temp_transfer_dir
+      show_message "transfer directory is dirty from a previous run, please clean it up, and del it\nor hit ok and leave stuff in it to abort current transfer (or touch trust_dropbox file)"
       assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0, "shared temp transfer drop dir had some unknown files in it?"
-      copy_all_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir, 'to dropbox'
-	end
+    end
+    copy_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir, 'to dropbox'
     assert file_size_incoming_from_dropbox == size, "expecting size #{size} but put size #{file_size_incoming_from_dropbox}"
   end
   
