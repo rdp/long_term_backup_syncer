@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'simple_gui_creator' # we use it inline now
+require 'digest/md5'
 
 class IncomingCopier
 
@@ -184,7 +185,6 @@ class IncomingCopier
         sleep!(:server, "wait_for_lock_files_to_stabilize #{elapsed_time} < #{@synchro_time}")
       end
     end
-	sleep!(:server, "lock obtained/locked!", 0)
     true
   end
   
@@ -195,10 +195,11 @@ class IncomingCopier
       create_lock_file
       got_it = wait_for_lock_files_to_stabilize
     end
+	sleep!(:server, "lock obtained/locked!")
   end
   
-  require 'digest/md5'
   def split_up_file filename
+    sleep!(:server, "splitting up large file #{filename}", 0)
     size = 0
 	file_size = File.size filename
 	file_md5 = Digest::MD5.file(filename)
@@ -310,6 +311,7 @@ class IncomingCopier
 	split_up_too_large_of_files
 	chunks = split_to_chunks
 	chunks.each_with_index{|(chunk, size), idx|
+	  sleep(:server, "copying in chunk #{idx+1} of #{chunks.size}")
 	  do_full_chunk_to_clients chunk, size, (idx == (chunks.size - 1))
     }
   end
