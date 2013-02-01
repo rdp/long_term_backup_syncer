@@ -236,7 +236,7 @@ class IncomingCopier
       else
         file_size = 0 # count directories as 0 size
       end
-	  raise "we should have already split up this file!" if file_size > @dropbox_size
+      raise "we should have already split up this file!" if file_size > @dropbox_size
       if file_size + current_sum > @dropbox_size
         out << [current_group, current_sum]
         current_group = [f] # f might be bigger than @dropbox_size...
@@ -250,7 +250,7 @@ class IncomingCopier
     out
   end
   
-  raise unless JRUBY_VERSION >= '1.7.2' # avoid JRUBY-7046 here or there...
+  raise 'old jruby version detected!' unless JRUBY_VERSION >= '1.7.2' # avoid JRUBY-7046 here or there...
   
   def renamed_being_transferred_dir
     @local_drop_here_to_save_dir + '.being_transferred'
