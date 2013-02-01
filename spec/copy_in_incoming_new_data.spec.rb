@@ -20,6 +20,7 @@ describe IncomingCopier do
     Dir.mkdir 'dropbox_root_dir'
     Dir.mkdir 'longterm_storage'
     @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 1000, 1
+	@subject.quiet_mode = true
     @competitor = "dropbox_root_dir/backup_syncer/synchronization/some_other_process.lock"
   end
 

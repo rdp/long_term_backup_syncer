@@ -23,6 +23,7 @@ class IncomingCopier
   attr_reader :longterm_storage_dir
   attr_accessor :prompt_before_uploading
   attr_reader :local_drop_here_to_save_dir
+  attr_accessor :quiet_mode
 
   def dropbox_temp_transfer_dir
     "#{@dropbox_root_local_dir}/backup_syncer/temp_transfer_big_dir"
@@ -38,7 +39,7 @@ class IncomingCopier
   
   def sleep!(output_char, sleep_time=@sleep_time)
     sleep sleep_time
-    print output_char, ' '
+    print output_char, ' ' unless quiet_mode
   end
   
   def files_incoming(use_temp_renamed_local_dir = false)
@@ -254,11 +255,9 @@ class IncomingCopier
       touch_the_you_can_go_for_it_file size
       wait_for_all_clients_to_copy_files_out
       File.delete previous_you_can_go_for_it_size_file
-	  p "clearing temp transfer dir"
       FileUtils.rm_rf dropbox_temp_transfer_dir
 	  mkdir_ignore_errors dropbox_temp_transfer_dir  # google drive can die here
     end
-	p "done transferring all transfer chunks for this one"
   end
   
   def mkdir_ignore_errors dir
@@ -275,7 +274,6 @@ class IncomingCopier
   end
   
   def client_done_copying_files
-    p ' client_done_copying_fileslooking in ', track_when_client_done_dir
     Dir[track_when_client_done_dir + '/*']
   end
   
