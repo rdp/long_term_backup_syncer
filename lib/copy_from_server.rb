@@ -13,7 +13,7 @@ class IncomingCopier
   def wait_for_transfer_file_come_up
     assert @current_transfer_file == nil
     while (files = current_transfer_ready_files).length == 0
-      sleep!('wait_for_transfer_file_come_up')
+      sleep! :client, 'wait_for_transfer_file_come_up'
       if @shutdown
         raise 'shutting down' # should be safe here...
       end
@@ -26,7 +26,7 @@ class IncomingCopier
     @current_transfer_file =~ /.*_(\d+)/
     length_expected = $1.to_i
     while((length = file_size_incoming_from_dropbox) < length_expected)
-      sleep!("wait_for_the_data_to_all_get_here #{length.as_gig} < #{length_expected.as_gig}")
+      sleep! :client, "wait_for_the_data_to_all_get_here #{length.as_gig} < #{length_expected.as_gig}"
     end
     assert file_size_incoming_from_dropbox == length_expected # not greater than it yikes!
 	length_expected
@@ -43,7 +43,7 @@ class IncomingCopier
   def copy_files_from_dropbox_to_local_permanent_storage size_expected
     # FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir # we want to have the glob...
 	files_to_copy = Dir[dropbox_temp_transfer_dir + '/**/*']
-    transferred, files_copied = copy_files_over files_to_copy, dropbox_temp_transfer_dir, @longterm_storage_dir, 'from dropbox'
+    transferred, files_copied = copy_files_over files_to_copy, dropbox_temp_transfer_dir, @longterm_storage_dir, :client
     assert transferred == size_expected
 	files_copied
   end
@@ -124,7 +124,7 @@ class IncomingCopier
 	if File.exist? path
 	  raise "file already exists #{path}?!"
 	end
-    sleep! "client touching done file #{path}", 0
+    sleep! :client, "touching done file #{path}", 0
     FileUtils.touch path
   end
   
@@ -132,7 +132,7 @@ class IncomingCopier
     # server might be too fast for us...and delete it before we reach here, possibly
     # assert File.exist? @current_transfer_file
     while File.exist? @current_transfer_file
-      sleep!('wait_till_current_transfer_is_deemed_over_by_sender ' + @current_transfer_file)
+      sleep!(:client, 'wait_till_current_transfer_is_deemed_over_by_sender ' + @current_transfer_file)
     end
   end
   

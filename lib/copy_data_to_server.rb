@@ -42,12 +42,12 @@ class IncomingCopier
     "#{@dropbox_root_local_dir}/backup_syncer/track_which_clients_are_done_dir"
   end
   
-  def sleep!(output_message, sleep_time=@sleep_time)
+  def sleep!(type, output_message, sleep_time=@sleep_time)
     sleep sleep_time
 	if send_updates_here
-	  send_updates_here.call output_message
+	  send_updates_here.call type, output_message
 	end
-    print output_message, ' ' unless quiet_mode
+    print "#{type}: #{output_message}." unless quiet_mode
   end
   
   def files_incoming(use_temp_renamed_local_dir = false)
@@ -61,9 +61,9 @@ class IncomingCopier
 
   def wait_for_any_files_to_appear
     while files_incoming.length == 0
-      sleep!('wait_for_any_files_to_appear')
-        if @shutdown
-        raise 'shutting down'
+      sleep!(:server, 'wait_for_any_files_to_appear')
+      if @shutdown
+        raise 'shutting down' # a safe place to quit...
       end
     end
   end
@@ -93,7 +93,8 @@ class IncomingCopier
   
   attr_reader :local_drop_here_to_save_dir
   
-  def wait_for_incoming_files_and_rename_entire_dir  
+  def wait_for_incoming_files_prompt_and_rename_entire_dir
+    sleep!(:server, 'wait_for_prompt_confirmation')
     if @prompt_before_uploading
       @prompt_before_uploading.call
     end    
@@ -160,7 +161,7 @@ class IncomingCopier
     end
     while all_lock_files.length > 0
       raise 'double locking confusion?' if File.exist? this_process_lock_file
-      sleep!('waiting for old lock files to disappear ' + all_lock_files.join(' '))
+      sleep!(:server, 'waiting for old lock files to disappear ' + all_lock_files.join(' '))
     end
   end
   
@@ -180,10 +181,10 @@ class IncomingCopier
         delete_lock_file # 2 people requested the lock, so both give up (or possibly just this 1 gives up, hopefully thread safe)
         return false
       else
-        sleep!("wait_for_lock_files_to_stabilize #{elapsed_time} < #{@synchro_time}")
+        sleep!(:server, "wait_for_lock_files_to_stabilize #{elapsed_time} < #{@synchro_time}")
       end
     end
-	sleep!("lock obtained/locked!", 0)
+	sleep!(:server, "lock obtained/locked!", 0)
     true
   end
   
@@ -262,7 +263,7 @@ class IncomingCopier
     @local_drop_here_to_save_dir + '.being_transferred'
   end
   
-  def copy_files_over files, relative_to_strip_from_files, to_this_dir, name
+  def copy_files_over files, relative_to_strip_from_files, to_this_dir, type
     sum_transferred = 0
 	new_transferred_names = []
     for filename in files
@@ -271,7 +272,7 @@ class IncomingCopier
       FileUtils.mkdir_p new_subdir # I guess we might be able to use some type of *args to FileUtils.cp_r here?
       if(File.file? filename)
         FileUtils.cp filename, new_subdir
-        sleep!('copy_files_over' + name, 0) # status update :) 
+        sleep!(type, 'copy_files_over', 0) # status update :) 
         new_filename = new_subdir + '/' + File.filename(filename)
         sum_transferred += File.size(new_filename) # getting a file size after copy should be safe, shouldn't it?
 		new_transferred_names << new_filename
@@ -289,7 +290,7 @@ class IncomingCopier
       show_message "transfer directory is dirty from a previous run, please clean it up, and del it\nor hit ok and leave stuff in it to abort current transfer (or touch trust_dropbox file)"
       assert Dir[dropbox_temp_transfer_dir + '/*'].length == 0, "shared temp transfer drop dir had some unknown files in it?"
     end
-    copy_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir, 'to dropbox'
+    copy_files_over chunk, renamed_being_transferred_dir, dropbox_temp_transfer_dir, :server
     assert file_size_incoming_from_dropbox == size, "expecting size #{size} but put size #{file_size_incoming_from_dropbox}"
   end
   
@@ -332,9 +333,9 @@ class IncomingCopier
   
   def wait_for_all_clients_to_copy_files_out
     while (got = client_done_copying_files.length) != @total_client_size
-      sleep! "wait_for_all_clients_to_copy_files_out #{got} < #{@total_client_size}"
+      sleep! :server, "wait_for_all_clients_to_copy_files_out #{got} < #{@total_client_size}"
     end
-	sleep! "detected all clients are done, deleting their notification files", 0
+	sleep! :server, "detected all clients are done, deleting their notification files", 0
     for file in client_done_copying_files
       File.delete file
     end
@@ -343,7 +344,7 @@ class IncomingCopier
   # the only one you should call...
   def go_single_transfer_out
     wait_for_any_files_to_appear
-    wait_for_incoming_files_and_rename_entire_dir
+    wait_for_incoming_files_prompt_and_rename_entire_dir
     obtain_lock
     begin
       copy_files_in_by_chunks

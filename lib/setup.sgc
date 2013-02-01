@@ -10,4 +10,5 @@
     [Re-configure!:re_configure] "Change directories, settings"
     [Minimize to tray:minimize_to_tray] "(Does nothing yet)"
     [Shutdown:shutdown]
-    "current status:current_status"
+    "current upload status" ":current_upload_status,width=300px"
+    "current download status" ":current_download_status,width=300px"
