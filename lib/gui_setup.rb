@@ -31,9 +31,12 @@ def get_input title, value
 end
 
 def re_configure
-  message = "Pick directory that is the root of your shared drive, like your_username/Google Drive or the like:"  
+  message = "Pick directory that is the root of your shared cloud drive, like username\\dropbox or something:"  
   show_message message unless storage[:root_drive]
   dir = new_existing_dir_chooser_and_go message, storage[:root_drive] || File.expand_path('~')
+  if dir =~ /google drive/i
+    show_message "warning, using google drive is not recommended since it can only copy 5GB before you have to \nmanually empty the trash online for it, suggest use something else..."
+  end
   storage[:root_drive] = dir
   storage[:client_count] = get_input("how many total end storage places will there be?", 2).to_i
   storage[:shared_drive_space_to_use] = get_input("How much shared drive to use for transfers (in GB)", storage[:shared_drive_space_to_use] || 2.5).to_f
@@ -64,7 +67,11 @@ a.elements[:re_configure].on_clicked {
 }
 
 a.elements[:open_drop_into_folder].on_clicked {
-  SimpleGuiCreator.show_in_explorer(storage[:drop_into_folder]+ '/.')
+  SimpleGuiCreator.show_in_explorer(storage[:drop_into_folder] + '/.')
+}
+
+a.elements[:open_long_term_folder].on_clicked {
+ SimpleGuiCreator.show_in_explorer(storage[:longterm_storage_local_dir] + '/.')
 }
 
 a.elements[:shutdown].on_clicked {

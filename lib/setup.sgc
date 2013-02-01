@@ -4,8 +4,8 @@
     "Number of final storage locations" ":client_count, width=10"
     "How much shared drive to use for transfers" ":shared_drive_space_to_use, width=25" "GB"
     "Folder to drop stuff into for it to be synchronized everywhere" ":drop_into_folder, width=350" [Open drop into folder:open_drop_into_folder]
-    "Folder to use for long term preservation locally" ":longterm_storage_local_dir, width=350"
-    "(Rremember to pre-zip folders (and videos too) for now, if you desire to save disk space)"
+    "Folder to use for long term preservation locally" ":longterm_storage_local_dir, width=350" [Open long term preservation folder:open_long_term_folder]
+    "(Remember to pre-zip folders (and videos too) for now, if you desire to save disk space)"
 
     [Re-configure!:re_configure]
     [Minimize to tray:minimize_to_tray] "Does nothing yet"
