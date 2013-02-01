@@ -17,6 +17,8 @@ class IncomingCopier
     FileUtils.mkdir_p track_when_client_done_dir
     @transfer_count = 0
     @prompt_before_uploading = nil
+	@shutdown = false
+	@copied_files = []
   end
   
   # most of these for unit tests...
@@ -108,9 +110,9 @@ class IncomingCopier
     @previous_go_for_it_filename || 'fake for unit tests'
   end
   
-  def next_you_can_go_for_it_after_size_file current_chunk_size
+  def next_you_can_go_for_it_after_size_file current_chunk_size, end_of_a_batch
     # use filename instead of size, to make it synchronously created with its contents :)
-    @previous_go_for_it_filename = "#{lock_dir}/begin_transfer_courtesy_#{Socket.gethostname}_#{Process.pid}_#{@transfer_count += 1}_#{current_chunk_size}"
+    @previous_go_for_it_filename = "#{lock_dir}/begin_transfer_courtesy_#{Socket.gethostname}_#{Process.pid}_#{@transfer_count += 1}_#{end_of_a_batch ? 'recombinate_ok' : ''}_#{current_chunk_size}"
   end
   
   def sanity_check_clean_and_locked
@@ -135,9 +137,9 @@ class IncomingCopier
   
   # LODO assert that the 'go' file for clients is still there when they finish...though what could they ever do in that case? prompt at least?
   
-  def touch_the_you_can_go_for_it_file current_chunk_size
+  def touch_the_you_can_go_for_it_file current_chunk_size, end_of_a_batch
     sanity_check_clean_and_locked
-    FileUtils.touch next_you_can_go_for_it_after_size_file(current_chunk_size)
+    FileUtils.touch next_you_can_go_for_it_after_size_file(current_chunk_size, end_of_a_batch)
   end
   
   def all_lock_files
@@ -195,7 +197,7 @@ class IncomingCopier
 	file_count = 0
 	File.open(filename, 'rb') do |from_file|
 	  while size < file_size
-	    piece_filename = "#{filename}___piece_#{file_count}_of_#{pieces_total}"
+	    piece_filename = "#{filename}___piece_#{file_count}_of_#{pieces_total}_total_size_#{file_size}"
 	    File.open(piece_filename, 'wb') do |to_file|
 	      to_file.syswrite(from_file.sysread(@dropbox_size))
 		  size += @dropbox_size
@@ -252,20 +254,23 @@ class IncomingCopier
   
   def copy_files_over files, relative_to_strip_from_files, to_this_dir, name
     sum_transferred = 0
+	new_transferred_names = []
     for filename in files
       relative_extra_dir = filename[(relative_to_strip_from_files.length + 1)..-1] # like "subdir/b"
       new_subdir = to_this_dir + '/' + File.dirname(relative_extra_dir)
       FileUtils.mkdir_p new_subdir # I guess we might be able to use some type of *args to FileUtils.cp_r here?
       if(File.file? filename)
         FileUtils.cp filename, new_subdir
-        sleep!('copy_files_over' + name, 0) # status update :)        
-        sum_transferred += File.size(new_subdir + '/' + File.filename(filename)) # getting a file size after copy should be safe, shouldn't it?
+        sleep!('copy_files_over' + name, 0) # status update :) 
+        new_filename = new_subdir + '/' + File.filename(filename)
+        sum_transferred += File.size(new_filename) # getting a file size after copy should be safe, shouldn't it?
+		new_transferred_names << new_filename
       else
         assert File.directory?(filename)
         FileUtils.mkdir_p new_subdir + '/' + relative_extra_dir
       end
     end
-    sum_transferred
+    [sum_transferred, new_transferred_names]
   end
   
   def copy_chunk_to_dropbox chunk, size
@@ -278,20 +283,27 @@ class IncomingCopier
     assert file_size_incoming_from_dropbox == size, "expecting size #{size} but put size #{file_size_incoming_from_dropbox}"
   end
   
-  def copy_files_in_by_chunks
-    sanity_check_clean_and_locked
-	split_up_too_large_of_files
-    for chunk, size in split_to_chunks
-      copy_chunk_to_dropbox chunk, size
-      touch_the_you_can_go_for_it_file size
-      wait_for_all_clients_to_copy_files_out
-      File.delete previous_you_can_go_for_it_size_file
-      FileUtils.rm_rf dropbox_temp_transfer_dir
-	  mkdir_ignore_errors dropbox_temp_transfer_dir  # google drive can die here
-    end
+  def do_full_chunk_to_clients chunk, size, is_last_chunk_in_batch
+    copy_chunk_to_dropbox chunk, size
+    touch_the_you_can_go_for_it_file size, is_last_chunk_in_batch
+    wait_for_all_clients_to_copy_files_out
+    File.delete previous_you_can_go_for_it_size_file
+    FileUtils.rm_rf dropbox_temp_transfer_dir
+    mkdir_looping dropbox_temp_transfer_dir  # google drive could die here...
   end
   
-  def mkdir_ignore_errors dir
+  def copy_files_in_by_chunks
+    # we retain the lock the whole time...so it's safe for us to send files in random order, then tell the clients to recombinate
+	# maybe we should just touch a 'you can recombinate file' when we're done...
+    sanity_check_clean_and_locked
+	split_up_too_large_of_files
+	chunks = split_to_chunks
+	chunks.each_with_index{|(chunk, size), idx|
+	  do_full_chunk_to_clients chunk, size, (idx == (chunks.size - 1))
+    }
+  end
+  
+  def mkdir_looping dir
     begin
       Dir.mkdir dir
 	rescue Errno::EIO => busy

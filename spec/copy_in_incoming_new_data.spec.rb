@@ -137,11 +137,14 @@ describe IncomingCopier do
     end    
   end
   
-  def create_a_few_files_in_to_transfer_dir
+  def create_a_few_files_in_to_transfer_dir with_huge_file = false
     File.write 'test_dir/a', '_'
     Dir.mkdir 'test_dir/subdir'
     File.write 'test_dir/subdir/b', '_' * 1000  
     Dir.mkdir 'test_dir/subdir2' # an empty dir :)
+	if with_huge_file
+	  File.write('test_dir/subdir/big_file', 'a'*5_050)
+	end
   end
   
   def create_a_few_files_in_dropbox_dir
@@ -196,7 +199,7 @@ describe IncomingCopier do
   
   it 'should touch the you can go for it file' do
     @subject.create_lock_file
-    @subject.touch_the_you_can_go_for_it_file(777)
+    @subject.touch_the_you_can_go_for_it_file(777, false)
     assert File.exist? @subject.previous_you_can_go_for_it_size_file
     proc { @subject.split_to_chunks }.should raise_exception /no files/
   end
@@ -210,13 +213,13 @@ describe IncomingCopier do
     it 'should be able to wait till it sees that something is ready to transfer' do
       t = time_in_other_thread { @subject.wait_for_transfer_file_come_up }
       sleep 0.3
-      FileUtils.touch @subject.next_you_can_go_for_it_after_size_file(767)
+      FileUtils.touch @subject.next_you_can_go_for_it_after_size_file(767, false)
       t.join
       @thread_took.should be > 0.3
     end
     
     it 'should wait till enough file bytes appear before performing copy' do
-      FileUtils.touch @subject.next_you_can_go_for_it_after_size_file(767)
+      FileUtils.touch @subject.next_you_can_go_for_it_after_size_file(767, false)
       @subject.wait_for_transfer_file_come_up # notice it
       t = time_in_other_thread { @subject.wait_for_the_data_to_all_get_here }
       sleep 0.1
@@ -228,7 +231,7 @@ describe IncomingCopier do
     end
     
     it 'should bail if you transfer too much' do
-      FileUtils.touch @subject.next_you_can_go_for_it_after_size_file(767)
+      FileUtils.touch @subject.next_you_can_go_for_it_after_size_file(767, false)
       @subject.wait_for_transfer_file_come_up # notice it
       sleep 0.1 # let it sleep
        File.write "dropbox_root_dir/backup_syncer/temp_transfer_big_dir/a", '_' * 786
@@ -286,7 +289,7 @@ describe IncomingCopier do
 	  sum	  
 	end
 	
-	it 'should do full transfer with 2 clients' do
+	it 'should do full transfer with 3/2 clients' do
 	  @subject.total_client_size = 3 # 2 clients, plus self
       recipient1 = IncomingCopier.new 'test_dir1', 'dropbox_root_dir', 'longterm_storage1', 0.1, 0.5, 1000, 3 # the ending 3 shouldn't matter here...
 	  recipient2 = IncomingCopier.new 'test_dir2', 'dropbox_root_dir', 'longterm_storage2', 0.1, 0.5, 1000, 3
@@ -318,18 +321,18 @@ describe IncomingCopier do
 	    Dir.mkdir 'test_dir.being_transferred'
 	    File.write('test_dir.being_transferred/big_file', 'a'*2500)
 		@subject.split_up_too_large_of_files
-		assert File.size('test_dir.being_transferred/big_file___piece_0_of_2') == 1000
-		assert File.size('test_dir.being_transferred/big_file___piece_2_of_2') == 500
+		assert File.size('test_dir.being_transferred/big_file___piece_0_of_2_total_size_2500') == 1000
+		assert File.size('test_dir.being_transferred/big_file___piece_2_of_2_total_size_2500') == 500
 		assert !File.exist?('test_dir.being_transferred/big_file')
 	  end
 	  
 	  it 'should combine the files when done' do
-	    File.write('longterm_storage/big_file___piece_0_of_1', 'a'*1111)
-	    File.write('longterm_storage/big_file___piece_1_of_1', 'a'*2222)
-	    @subject.recombinate_files_split_piece_wise ['longterm_storage/big_file___piece_1_of_1', 'longterm_storage/big_file___piece_0_of_1']
+	    File.write('longterm_storage/big_file___piece_0_of_1_total_size_3333', 'a'*1111)
+	    File.write('longterm_storage/big_file___piece_1_of_1_total_size_3333', 'a'*2222)
+	    @subject.recombinate_files_split_piece_wise ['longterm_storage/big_file___piece_1_of_1_total_size_3333', 'longterm_storage/big_file___piece_0_of_1_total_size_3333']
 		File.size('longterm_storage/big_file').should == 3333
-		assert !File.exist?('longterm_storage/big_file___piece_0_of_1')
-		assert !File.exist?('longterm_storage/big_file___piece_1_of_1')
+		assert !File.exist?('longterm_storage/big_file___piece_0_of_1_total_size_3333')
+		assert !File.exist?('longterm_storage/big_file___piece_1_of_1_total_size_3333')
 	  end
 	  
 	  it 'should combine files that have over 10 pieces, and multiple files same time' do
@@ -337,16 +340,37 @@ describe IncomingCopier do
 	    File.write('test_dir.being_transferred/big_file', 'a'*50_050)
 	    File.write('test_dir.being_transferred/abig_file', 'b'*50_051)
 	    File.write('test_dir.being_transferred/2big_file', 'c'*50_052)
-	    pieces = @subject.split_up_too_large_of_files
+	    pieces = @subject.split_up_too_large_of_files # lazy testing
 		@subject.recombinate_files_split_piece_wise pieces
 		File.read('test_dir.being_transferred/big_file').should == 'a'*50_050
 		File.read('test_dir.being_transferred/abig_file').should == 'b'*50_051
 		File.read('test_dir.being_transferred/2big_file').should == 'c'*50_052
 	  end
 	  
-	  it 'should raise if missing pieces on recombinate time'
+	  it 'should raise if missing pieces on recombinate time' do
+	    Dir.mkdir 'test_dir.being_transferred'
+	    File.write('test_dir.being_transferred/big_file', 'a'*50_050)
+	    pieces = @subject.split_up_too_large_of_files
+		proc { @subject.recombinate_files_split_piece_wise pieces[0..-2]}.should raise_exception
+		proc { @subject.recombinate_files_split_piece_wise pieces[1..-1]}.should raise_exception
+		# there are a lot more edge cases here...
+	  end	  
 	  
-	  it 'should do a full transfer with pieces'
+	  it 'should do a full transfer with pieces' do
+		#@subject.quiet_mode = false
+        create_a_few_files_in_to_transfer_dir true
+	    assert !File.exist?(@subject.longterm_storage_dir + '/subdir/big_file') # sanity check test		
+        t = Thread.new { @subject.go_single_transfer_out }
+        loop { 
+		  got_end_transfer_marker = @subject.go_single_transfer_in 
+		  break if got_end_transfer_marker
+		}
+        t.join
+		File.read(@subject.longterm_storage_dir + '/subdir/big_file').should == 'a'*5_050
+		assert @subject.previous_you_can_go_for_it_size_file =~ /recombinate_ok/ # last piece is an end of group marker...
+	  end
+	  
+	  it 'should be able to do big transfers one after another...'
 	
 	end
 
