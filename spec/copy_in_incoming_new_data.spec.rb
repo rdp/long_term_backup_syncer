@@ -358,7 +358,6 @@ describe IncomingCopier do
 	  end	  
 	  
 	  it 'should do a full transfer with pieces' do
-		@subject.quiet_mode = false
         create_a_few_files_in_to_transfer_dir true
 	    assert !File.exist?(@subject.longterm_storage_dir + '/subdir/big_file') # sanity check test		
         t = Thread.new { @subject.go_single_transfer_out }
@@ -373,7 +372,12 @@ describe IncomingCopier do
 	  
 	  it 'should have a unit test to be able to do big transfers one after another...'
 	  
-	  it 'should fail if file sizes dont match up for recombo'
+	  it 'should fail if file sizes dont match up for recombo' do
+	    File.write('longterm_storage/big_file___piece_0_of_1_total_size_3334', 'a'*1111) # wrong numbers...
+	    File.write('longterm_storage/big_file___piece_1_of_1_total_size_3334', 'a'*2222)
+	    proc {@subject.recombinate_files_split_piece_wise ['longterm_storage/big_file___piece_1_of_1_total_size_3334', 'longterm_storage/big_file___piece_0_of_1_total_size_3334']}.should raise_exception
+  
+	  end
 	
 	end
 
