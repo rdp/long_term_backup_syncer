@@ -91,7 +91,13 @@ class IncomingCopier
 		current_total_pieces_number = total_pieces_number
 	  end
 	  
-	  current_handle.syswrite(File.binread(filename))
+	  chunk_size = 100*1024*1024 # 100 MB chunks to avoid out of heap errors...
+	  File.open(filename, 'rb') do |f|
+	    while !f.eof?
+	      current_handle.write(f.read chunk_size)
+		end
+      end
+	  
 	  if total_pieces_number == this_piece_number
 	    current_handle.close
 		current_handle = nil
@@ -136,7 +142,7 @@ class IncomingCopier
     end
   end
   
-  # this concept of delineating a batch/group of transfers...totally stinks and scares me yikes!
+  # this concept of delineating a batch/group of transfers...totally scares me yikes! maybe make a group manifest for it?
   def recombinate_files_for_multiple_transfers_possibly
     got_end_big_transfer = false
   	if @current_transfer_file =~ /recombinate_ok/
