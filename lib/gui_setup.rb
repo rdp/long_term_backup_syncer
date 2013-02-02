@@ -151,7 +151,7 @@ synchro_time = 130 # seconds for a trivial lock file to propagate to all clients
     @subject.go_single_transfer_out 
   } 
   rescue => e
-    show_message "thread died #{e} #{e.backtrace.join("\n")}"
+    show_message "thread died #{e} #{e.backtrace.join("\n")}" unless e.to_s =~ /shutting down/
   end
 }
 
