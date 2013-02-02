@@ -125,7 +125,7 @@ synchro_time = 130 # seconds for a trivial lock file to propagate to all clients
   got = :no
   while got == :no
     begin
-	  got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)}.join(', ')},\n would you like to do that now, or wait\n(to put more files there or rename them first)?", :yes => "Now, the files are all ready!", :no => "reveal files")
+	  got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)[0..20]}.join(', ')},\n would you like to do that now, or wait\n(to put more files there or rename them first)?", :yes => "Now, the files are all ready!", :no => "reveal files")
 	rescue => e
 	  # cancel or X
 	end
