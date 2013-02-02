@@ -26,6 +26,8 @@ bounce it off people
 
 = someday/never =
 
+re-split partial files (i.e. keep around the old one, on re-transfer, delete partials, re-split, otherwise it looks confusing, though happening to still work...)
+
 it should list "storing this many total bytes, have transferred this many total bytes since inception..."
 
 ideally it shouldn't bring a computer with an HDD to its knees permanently just reading md5's...hmm...if possible...

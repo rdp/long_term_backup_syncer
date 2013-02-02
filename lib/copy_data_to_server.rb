@@ -231,7 +231,7 @@ class IncomingCopier
   def split_up_too_large_of_files
     all_pieces = [] # for unit tests
     for potentially_big_file in files_incoming(true)
-	  raise "dirty old partial file" if potentially_big_file =~ /___piece_/ # that would mean dirty..
+	  # raise "dirty old partial file" if potentially_big_file =~ /___piece_/ # this is actually ok in the case of an interrupted transfer where the file was already split LODO keep the original big files, and delete these, and re-split, in that case, I think...since it confuses people to death to see their beautiful files mangled LOL
 	  if File.size(potentially_big_file) > @dropbox_size
 	    all_pieces += split_up_file(potentially_big_file)
 	  end
