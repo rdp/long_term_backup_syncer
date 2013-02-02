@@ -26,6 +26,8 @@ bounce it off people
 
 = someday/never =
 
+it should list "storing this many total bytes, have transferred this many total bytes since inception..."
+
 ideally it shouldn't bring a computer with an HDD to its knees permanently just reading md5's...hmm...if possible...
 
 no dual folder stuff, you just drop it into your local preservation folder, it goes from there (renamed it to .in_process perhaps?)
