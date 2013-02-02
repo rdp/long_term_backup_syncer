@@ -203,13 +203,13 @@ class IncomingCopier
 	file_size = File.size filename
     sleep!(:server, "calculating md5 for large file .../#{File.basename(filename)}", 0)
 	file_md5 = Digest::MD5.file(filename)
-    sleep!(:server, "splitting up large file .../#{File.basename(filename)}", 0)
 	pieces_total = (file_size / @dropbox_size.to_f).ceil
 	pieces = []
 	file_count = 0
 	File.open(filename, 'rb') do |from_file|
 	  while size < file_size
 	    piece_filename = "#{filename}___piece_#{file_count}_of_#{pieces_total}_total_size_#{file_size}_md5_#{file_md5}"
+        sleep!(:server, "splitting up large file .../#{File.basename(filename)} #{file_count+1}/#{pieces_total}", 0)
 	    File.open(piece_filename, 'wb') do |to_file|
 		  local_chunk_size = 1024*1024*128 # 128 MB reads, to avoid running out of Heap if you read 2.5GB at a time...
 		  amount_read = 0

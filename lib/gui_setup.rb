@@ -101,8 +101,9 @@ end
 
 setup_ui # init...
 
-class Numeric
+class Numeric # could start as Float...
   def as_GB
+    # but we still want an int out...
     (self * 1e9).to_i
   end
 end
