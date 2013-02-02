@@ -39,7 +39,7 @@ def re_configure
   end
   storage[:root_drive] = dir
   storage[:client_count] = get_input("how many total end storage places will there be?", 2).to_i
-  storage[:shared_drive_space_to_use] = get_input("How much shared drive to use for transfers (in GB)", storage[:shared_drive_space_to_use] || 2.5).to_f
+  storage[:shared_drive_space_to_use] = get_input("How much shared drive to use for outgoing transfers (in GB)", storage[:shared_drive_space_to_use] || 2.5).to_f
   transfer_dir = File.expand_path('~/synchronizer_drop_files_here_they_will_be_copied_out_then_deleted')
   FileUtils.mkdir_p(transfer_dir)
   storage[:drop_into_folder] = new_existing_dir_chooser_and_go("Pick directory where you can drop files in to have them transferred", storage[:drop_into_folder] || transfer_dir)
@@ -62,7 +62,7 @@ end
 
 a.elements[:re_configure].on_clicked {
   re_configure
-  show_message "ok, shutting down app now, then restart it..."
+  show_message "ok, shutting down app now, restart it for new changes to take effect..."
   shutdown
 }
 
@@ -88,15 +88,20 @@ a.after_closed {
 }
 
 def shutdown
+  puts 'shutting down...'
   a.elements[:status].text = "shutting down..."
   unless @subject.shutdown
-    @subject.shutdown! 
+    @subject.shutdown!
     Thread.new {
-      @t1.join  
+    p 'join1'
+      @t1.join
+      p 'join2'
       @t2.join
+      p 'closing...'
       a.close!
     }
-  end 
+  end
+ 
 end
 
 setup_ui # init...

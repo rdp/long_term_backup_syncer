@@ -13,7 +13,7 @@ class IncomingCopier
   def wait_for_transfer_file_come_up
     assert @current_transfer_file == nil
     while (files = current_transfer_ready_files).length == 0
-      sleep! :client, 'wait_for_transfer_file_come_up'
+      sleep! :client, 'wait_for_next_transfer_ready_file_to_appear'
       if @shutdown
         raise 'shutting down' # should be safe here...
       end
