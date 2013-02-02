@@ -80,7 +80,7 @@ class IncomingCopier
   def cleanup_old_broken_runs
     if File.directory?(renamed_being_transferred_dir)
       if Dir[renamed_being_transferred_dir + '/*'].length > 0 && Dir[local_drop_here_to_save_dir + '/*'].length == 0
-        if show_select_buttons_prompt("appears there was an interrupted transfer, would you like to restage it for transfer?") == :yes
+        if show_select_buttons_prompt("appears there was an interrupted transfer, would you like to restage it for re-transfer?") == :yes
           FileUtils.rmdir local_drop_here_to_save_dir          
           FileUtils.mv renamed_being_transferred_dir, local_drop_here_to_save_dir
           return
