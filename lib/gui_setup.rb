@@ -125,12 +125,15 @@ synchro_time = 130 # seconds for a trivial lock file to propagate to all clients
   got = :no
   while got == :no
     begin
-	  got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)[0..20]}.join(', ')},\n would you like to do that now, or wait\n(to put more files there or rename them first)?", :yes => "Now, the files are all ready!", :no => "reveal files")
+	  got = SimpleGuiCreator.show_select_buttons_prompt("we have detected some files are ready to upload #{Dir[@subject.local_drop_here_to_save_dir + '/*'].map{|f| File.filename(f)[0..20]}.join(', ')},\n would you like to do that now, or wait\n(to put more files there or rename them first)?", :yes => "Now, the files are all ready!", :no => "reveal files", :cancel => "wait 15s")
 	rescue => e
-	  # cancel or X
+	  # X, don't just re-appear...
+	  sleep 15
 	end
 	if got == :no
 	  reveal_drop_into_folder      
+	elsif got == :cancel
+	  sleep 15
 	end
   end
 }
@@ -161,7 +164,7 @@ synchro_time = 130 # seconds for a trivial lock file to propagate to all clients
     @subject.go_single_transfer_in 
   } 
   rescue => e
-    show_message "thread2 died #{e}  #{e.backtrace.join("\n")}"
+    show_message "thread2 died #{e}  #{e.backtrace.join("\n")}" unless e.to_s =~ /shutting down/ # LODO more graceful, just exit??
   end
 }
 
