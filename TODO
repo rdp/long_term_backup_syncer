@@ -8,22 +8,11 @@ then go cuh-razy with it
 
 = if I ever want to distribute =
 
-general md5 of "everything" so that you know the repo's are all in sync
-
 change verbiage to 'repo'
 
 fix/do the minimize to tray button
 
-right click on a folder "sync it!"
-
 new/real icons
-
-no dual folder stuff, you just drop it into your local preservation folder, it goes from there (renamed it to .in_process perhaps?)
-  and skips you copying it in to a local folder :P
-
-double check 15s for static files when they click "ready..."
-  
-update the found file list if they rename things...? sure why not LOL
 
 innosetup
 
@@ -33,9 +22,24 @@ pick a new name
 
 "daemonize" startup mode
 
+bounce it off people
+
 = someday/never =
 
+no dual folder stuff, you just drop it into your local preservation folder, it goes from there (renamed it to .in_process perhaps?)
+  and skips you copying it in to a local folder :P
+
+double check 15s for static files when they click "ready..."
+  
+general md5 of "everything" so that you know the repo's are all in sync
+
+right click on a folder "sync it!"
+
+update the found file list if they rename things...? sure why not LOL
+
 recombo doesn't work if you restart a client half way through...
+  server also wouldn't work if shut down half way...
+  maybe if they hit the 'x' I should force them to wait for a graceful shutdown, like post current batch...
 
 assert they have dropbox_size free *at all* on their drive...
 
