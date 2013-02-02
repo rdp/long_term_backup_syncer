@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'simple_gui_creator' # we use it inline now
+require 'digest/md5'
 
 class IncomingCopier
 
@@ -79,7 +80,7 @@ class IncomingCopier
   def cleanup_old_broken_runs
     if File.directory?(renamed_being_transferred_dir)
       if Dir[renamed_being_transferred_dir + '/*'].length > 0 && Dir[local_drop_here_to_save_dir + '/*'].length == 0
-        if show_select_buttons_prompt("appears there was an interrupted transfer, would you like to restart it?") == :yes
+        if show_select_buttons_prompt("appears there was an interrupted transfer, would you like to restage it for transfer?") == :yes
           FileUtils.rmdir local_drop_here_to_save_dir          
           FileUtils.mv renamed_being_transferred_dir, local_drop_here_to_save_dir
           return
@@ -155,7 +156,7 @@ class IncomingCopier
   
   def wait_if_already_has_lock_files
     if old_lock_files_this_box.length > 0
-      if show_select_buttons_prompt("found some apparent old lock files from this box, they'r eprobably orphaned, delete them?\n#{old_lock_files_this_box.join(', ')}") == :yes
+      if show_select_buttons_prompt("found some apparent old lock synchronization files that originated from this local box, they're probably orphaned old junk, delete them?\n#{old_lock_files_this_box.join(', ')}") == :yes
         old_lock_files_this_box.each{|f| File.delete(f) }
       end
     end
@@ -184,7 +185,6 @@ class IncomingCopier
         sleep!(:server, "wait_for_lock_files_to_stabilize #{elapsed_time} < #{@synchro_time}")
       end
     end
-	sleep!(:server, "lock obtained/locked!", 0)
     true
   end
   
@@ -195,22 +195,29 @@ class IncomingCopier
       create_lock_file
       got_it = wait_for_lock_files_to_stabilize
     end
+	sleep!(:server, "lock obtained/locked!")
   end
   
-  require 'digest/md5'
   def split_up_file filename
     size = 0
 	file_size = File.size filename
+    sleep!(:server, "calculating md5 for large file .../#{File.basename(filename)}", 0)
 	file_md5 = Digest::MD5.file(filename)
-	pieces_total = file_size / @dropbox_size
+	pieces_total = (file_size / @dropbox_size.to_f).ceil
 	pieces = []
 	file_count = 0
 	File.open(filename, 'rb') do |from_file|
 	  while size < file_size
 	    piece_filename = "#{filename}___piece_#{file_count}_of_#{pieces_total}_total_size_#{file_size}_md5_#{file_md5}"
+        sleep!(:server, "splitting up large file .../#{File.basename(filename)} #{file_count+1}/#{pieces_total}", 0)
 	    File.open(piece_filename, 'wb') do |to_file|
-	      to_file.syswrite(from_file.sysread(@dropbox_size))
-		  size += @dropbox_size
+		  local_chunk_size = 1024*1024*128 # 128 MB reads, to avoid running out of Heap if you read 2.5GB at a time...
+		  amount_read = 0
+		  while(amount_read < @dropbox_size && !from_file.eof?)
+		    amount_to_read = [local_chunk_size, @dropbox_size - amount_read].min # try not to go over the dropbox size ever...
+	        amount_read += to_file.write(from_file.read(amount_to_read))
+		  end
+		  size += amount_read
 		  file_count += 1
 	    end
 		pieces << piece_filename
@@ -310,6 +317,7 @@ class IncomingCopier
 	split_up_too_large_of_files
 	chunks = split_to_chunks
 	chunks.each_with_index{|(chunk, size), idx|
+	  sleep!(:server, "copying in chunk #{idx+1} of #{chunks.size}")
 	  do_full_chunk_to_clients chunk, size, (idx == (chunks.size - 1))
     }
   end

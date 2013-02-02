@@ -132,7 +132,7 @@ class IncomingCopier
     # server might be too fast for us...and delete it before we reach here, possibly
     # assert File.exist? @current_transfer_file
     while File.exist? @current_transfer_file
-      sleep!(:client, 'wait_till_current_transfer_is_deemed_over_by_sender ' + @current_transfer_file)
+      sleep!(:client, 'wait_till_current_transfer_is_deemed_over_by_sender ' + File.filename(@current_transfer_file))
     end
   end
   

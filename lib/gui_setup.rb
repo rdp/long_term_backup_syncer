@@ -106,9 +106,10 @@ end
 
 setup_ui # init...
 
-class Numeric
-  def to_gig
-    self * 1e9
+class Numeric # could start as Float...
+  def as_GB
+    # but we still want an int out...
+    (self * 1e9).to_i
   end
 end
 
@@ -116,11 +117,10 @@ poll_time = 3
 synchro_time = 130 # seconds for a trivial lock file to propagate to all clients [TODO test]
 
 @subject = IncomingCopier.new storage[:drop_into_folder], storage[:root_drive], storage[:longterm_storage_local_dir], poll_time, synchro_time, 
-  storage[:shared_drive_space_to_use].to_gig, storage[:client_count]
+  storage[:shared_drive_space_to_use].as_GB, storage[:client_count]
 
-@subject.cleanup_old_broken_runs # TODO other thread?/non blocking mode?
+@subject.cleanup_old_broken_runs
 
-# LODO just handle the waiting all here? yeah prolly
 @subject.prompt_before_uploading = proc {
   got = :no
   while got == :no
