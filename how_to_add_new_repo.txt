@@ -1,0 +1,6 @@
+Today:
+
+either copy a full repo worth to a HD (portable?) then copy it to the new repo, or attach the new repo to
+a computer with the full repo and copy it over (or via network share).
+Then edit the configs of all computers to increment the number.
+Then you're good to go.
