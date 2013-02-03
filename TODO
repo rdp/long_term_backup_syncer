@@ -26,6 +26,8 @@ bounce it off people
 
 = someday/never =
 
+the dropbox balloon popup files can have filenames that sound confusing to humans...
+
 re-split partial files (i.e. keep around the old one, on re-transfer, delete partials, re-split, otherwise it looks confusing, though happening to still work...)
 
 it should list "storing this many total bytes, have transferred this many total bytes since inception..."

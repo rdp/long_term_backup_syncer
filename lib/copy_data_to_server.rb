@@ -307,8 +307,7 @@ class IncomingCopier
     touch_the_you_can_go_for_it_file size, is_last_chunk_in_batch
     wait_for_all_clients_to_copy_files_out
     File.delete previous_you_can_go_for_it_size_file
-    FileUtils.rm_rf dropbox_temp_transfer_dir
-    mkdir_looping dropbox_temp_transfer_dir  # google drive could die here...
+    clear_dir_looping dropbox_temp_transfer_dir
   end
   
   def copy_files_in_by_chunks
@@ -323,10 +322,13 @@ class IncomingCopier
     }
   end
   
-  def mkdir_looping dir
-    begin
+  def clear_dir_looping dir
+	while File.directory? dir # sometimes dropbox has a handle on things when you try and delete them, so you can't...well at least this can happen in IT tests anyway
+	  FileUtils.rm_rf dir
+	end
+	begin
       Dir.mkdir dir
-	rescue Errno::EIO => busy
+	rescue Errno::EIO => folder_busy # google drive did this... 
 	  sleep 10
 	  retry
 	end
