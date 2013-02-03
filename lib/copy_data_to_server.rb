@@ -300,10 +300,10 @@ class IncomingCopier
     assert file_size_incoming_from_dropbox == size, "expecting size #{size} but put size #{file_size_incoming_from_dropbox}"
   end
   
-  def do_full_chunk_to_clients chunk, size, is_last_chunk_in_batch
+  def do_full_chunk_to_clients chunk, size, idx, chunks_total_size
     copy_chunk_to_dropbox chunk, size
-    touch_the_you_can_go_for_it_file size, is_last_chunk_in_batch
-    wait_for_all_clients_to_copy_files_out
+    touch_the_you_can_go_for_it_file size, (idx == chunks_total_size - 1)
+    wait_for_all_clients_to_copy_files_out idx, chunks_total_size
 	assert File.file? previous_you_can_go_for_it_size_file # it should still be there
     File.delete previous_you_can_go_for_it_size_file
     clear_dir_looping dropbox_temp_transfer_dir
@@ -317,7 +317,7 @@ class IncomingCopier
 	chunks = split_to_chunks
 	chunks.each_with_index{|(chunk, size), idx|
 	  sleep!(:server, "copying to network store chunk #{idx+1} of #{chunks.size}", 0)
-	  do_full_chunk_to_clients chunk, size, (idx == (chunks.size - 1))
+	  do_full_chunk_to_clients chunk, size, idx, chunks.size
     }
   end
   
@@ -342,9 +342,9 @@ class IncomingCopier
     Dir[track_when_client_done_dir + '/*']
   end
   
-  def wait_for_all_clients_to_copy_files_out
+  def wait_for_all_clients_to_copy_files_out idx, chunks_total_size
     while (got = client_done_copying_files.length) != @total_client_size
-      sleep! :server, "wait_for_all_clients_to_copy_files_out #{got} < #{@total_client_size}"
+      sleep! :server, "wait_for_all_clients_to_copy_files_out #{got} < #{@total_client_size} for chunk #{idx + 1} of #{chunks_total_size}"
     end
 	sleep! :server, "detected all clients are done, deleting their notification files", 0
     for file in client_done_copying_files

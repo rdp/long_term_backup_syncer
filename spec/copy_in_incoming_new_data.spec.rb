@@ -187,7 +187,7 @@ describe IncomingCopier do
   
   it 'should wait for clients to finish downloading it' do
     @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 1000, 2
-    t = time_in_other_thread { @subject.wait_for_all_clients_to_copy_files_out}
+    t = time_in_other_thread { @subject.wait_for_all_clients_to_copy_files_out 0, 1}
     FileUtils.touch @subject.track_when_client_done_dir + '/a'
     sleep 0.3
     FileUtils.touch @subject.track_when_client_done_dir + '/b'
