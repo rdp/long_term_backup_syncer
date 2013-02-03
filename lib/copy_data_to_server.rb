@@ -316,7 +316,7 @@ class IncomingCopier
 	split_up_too_large_of_files
 	chunks = split_to_chunks
 	chunks.each_with_index{|(chunk, size), idx|
-	  sleep!(:server, "copying in chunk #{idx+1} of #{chunks.size}", 0)
+	  sleep!(:server, "copying to network store chunk #{idx+1} of #{chunks.size}", 0)
 	  do_full_chunk_to_clients chunk, size, (idx == (chunks.size - 1))
     }
   end

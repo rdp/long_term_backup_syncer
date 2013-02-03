@@ -41,6 +41,7 @@ class IncomingCopier
   end  
   
   def copy_files_from_dropbox_to_local_permanent_storage size_expected
+    sleep!(:client, "copying files from network to local repo", 0)
     # FileUtils.cp_r dropbox_temp_transfer_dir + '/.', @longterm_storage_dir # we want to have the glob...
 	files_to_copy = Dir[dropbox_temp_transfer_dir + '/**/*']
     transferred, files_copied = copy_files_over files_to_copy, dropbox_temp_transfer_dir, @longterm_storage_dir, :client
@@ -58,6 +59,7 @@ class IncomingCopier
 	current_handle = nil
 	current_total_pieces_number = nil
 	for filename in filenames	  	
+	  sleep!(:client, "recombinating file #{filename}", 0)
 	  filename =~ regex
 	  incoming_filename = $1
 	  assert File.size(filename) > 0 # that would be weird...
