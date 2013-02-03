@@ -38,8 +38,9 @@ def re_configure
     show_message "warning, using google drive is not recommended since it can only copy 5GB before you have to \nmanually empty the trash online for it, suggest use something else..."
   end
   storage[:root_drive] = dir
-  storage[:client_count] = get_input("how many total end storage repo's will there be, including this one?", 2).to_i
+  storage[:client_count] = get_input("how many total end storage repo's will there be, including this one?", (storage[:client_count] || 2)).to_i
   storage[:shared_drive_space_to_use] = get_input("How much shared drive to use for outgoing transfers (in GB)", storage[:shared_drive_space_to_use] || 2.5).to_f
+  # LODO this feels a bit messed up, always mkdir'ing everything...
   transfer_dir = File.expand_path('~/synchronizer_drop_files_here_they_will_be_copied_out_then_deleted')
   FileUtils.mkdir_p(transfer_dir)
   storage[:drop_into_folder] = new_existing_dir_chooser_and_go("Pick directory where you can drop files in to have them transferred", storage[:drop_into_folder] || transfer_dir)
