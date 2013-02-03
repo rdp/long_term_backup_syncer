@@ -38,7 +38,7 @@ def re_configure
     show_message "warning, using google drive is not recommended since it can only copy 5GB before you have to \nmanually empty the trash online for it, suggest use something else..."
   end
   storage[:root_drive] = dir
-  storage[:client_count] = get_input("how many total end storage places will there be?", 2).to_i
+  storage[:client_count] = get_input("how many total end storage repo's will there be, including this one?", 2).to_i
   storage[:shared_drive_space_to_use] = get_input("How much shared drive to use for outgoing transfers (in GB)", storage[:shared_drive_space_to_use] || 2.5).to_f
   transfer_dir = File.expand_path('~/synchronizer_drop_files_here_they_will_be_copied_out_then_deleted')
   FileUtils.mkdir_p(transfer_dir)
