@@ -12,6 +12,7 @@ class IncomingCopier
     @synchro_time = synchro_time
     @dropbox_size = dropbox_size
     @total_client_size = total_client_size
+	assert total_client_size > 0
     @longterm_storage_dir = longterm_storage_dir
     FileUtils.mkdir_p lock_dir
     FileUtils.mkdir_p dropbox_temp_transfer_dir
@@ -40,7 +41,7 @@ class IncomingCopier
   end
   
   def track_when_client_done_dir
-    "#{@dropbox_root_local_dir}/backup_syncer/track_which_clients_are_done_dir"
+    "#{@dropbox_root_local_dir}/backup_syncer/synchronization/track_which_clients_are_done_dir" # subdir to be less uhgly
   end
   
   def sleep!(type, output_message, sleep_time=@sleep_time)
@@ -125,26 +126,23 @@ class IncomingCopier
   
   def sanity_check_clean_and_locked
     assert have_lock?, "should be locked"
-	# we have the lock, so we can control these, right?
-	# TODO re-lock? give it some more time?
+	# we have the lock, so we control these files, and none should be there yet :)
     if client_done_copying_files.length != 0
-	  if show_select_buttons_prompt("detected some orphaned 'transfer done' files, delete them?") == :yes
+	  if show_select_buttons_prompt("detected some orphaned 'transfer done' files, delete them?\n#{client_done_copying_files}") == :yes
 	    client_done_copying_files.each{|f| File.delete(f) }
       else
 	    raise 'dunno what to do here'
 	  end
 	end
     if current_transfer_ready_files.length != 0
-	  if show_select_buttons_prompt("detected some orphaned 'transfer read' files, delete them?") == :yes
+	  if show_select_buttons_prompt("detected some orphaned 'transfer read' files, delete them?\n#{current_transfer_ready_files}") == :yes
 	    current_transfer_ready_files.each{|f| File.delete(f) }
 	  else
 	    raise 'dunno how to proceed'	  
 	  end	
 	end
   end
-  
-  # LODO assert that the 'go' file for clients is still there when they finish...though what could they ever do in that case? prompt at least?
-  
+    
   def touch_the_you_can_go_for_it_file current_chunk_size, end_of_a_batch
     sanity_check_clean_and_locked
     FileUtils.touch next_you_can_go_for_it_after_size_file(current_chunk_size, end_of_a_batch)
@@ -198,7 +196,7 @@ class IncomingCopier
 	sleep!(:server, "lock obtained/locked!")
   end
   
-  def split_up_file filename
+  def split_up_large_file filename
     size = 0
 	file_size = File.size filename
     sleep!(:server, "calculating md5 for large file .../#{File.basename(filename)}", 0)
@@ -233,7 +231,7 @@ class IncomingCopier
     for potentially_big_file in files_incoming(true)
 	  # raise "dirty old partial file" if potentially_big_file =~ /___piece_/ # this is actually ok in the case of an interrupted transfer where the file was already split LODO keep the original big files, and delete these, and re-split, in that case, I think...since it confuses people to death to see their beautiful files mangled LOL
 	  if File.size(potentially_big_file) > @dropbox_size
-	    all_pieces += split_up_file(potentially_big_file)
+	    all_pieces += split_up_large_file(potentially_big_file)
 	  end
 	end
 	all_pieces
@@ -306,6 +304,7 @@ class IncomingCopier
     copy_chunk_to_dropbox chunk, size
     touch_the_you_can_go_for_it_file size, is_last_chunk_in_batch
     wait_for_all_clients_to_copy_files_out
+	assert File.file? previous_you_can_go_for_it_size_file # it should still be there
     File.delete previous_you_can_go_for_it_size_file
     clear_dir_looping dropbox_temp_transfer_dir
   end
@@ -350,6 +349,7 @@ class IncomingCopier
 	sleep! :server, "detected all clients are done, deleting their notification files", 0
     for file in client_done_copying_files
       File.delete file
+	  p 'deletec', file, File.exist?(file)
     end
   end
 
