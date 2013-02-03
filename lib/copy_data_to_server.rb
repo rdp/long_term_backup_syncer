@@ -348,7 +348,12 @@ class IncomingCopier
     end
 	sleep! :server, "detected all clients are done, deleting their notification files", 0
     for file in client_done_copying_files
-      File.delete file
+      begin
+	    File.delete file
+      rescue Errno::EACCES => file_being_touched_right_now # mostly for unit tests...
+	    p 'retrying delete ' + file
+	    retry
+	  end
 	  p 'deletec', file, File.exist?(file)
     end
   end

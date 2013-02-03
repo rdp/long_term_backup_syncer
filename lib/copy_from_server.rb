@@ -51,14 +51,14 @@ class IncomingCopier
   
   def recombinate_files_split_piece_wise filenames
     regex = /^(.+)___piece_(\d+)_of_(\d+)_total_size_(\d+)_md5_(.*)$/
-    filenames = filenames.select{|f| f =~ regex}.sort_by{|f| f =~ regex; [$1, Integer($2)]}
+    filenames_to_recombo = filenames.select{|f| f =~ regex}.sort_by{|f| f =~ regex; [$1, Integer($2)]}
 	previous_number = nil
 	previous_name = nil
 	previous_total_size = nil
 	previous_md5 = nil
 	current_handle = nil
 	current_total_pieces_number = nil
-	for filename in filenames	  	
+	for filename in filenames_to_recombo	  	
 	  sleep!(:client, "recombinating file #{filename}", 0)
 	  filename =~ regex
 	  incoming_filename = $1
@@ -119,10 +119,10 @@ class IncomingCopier
 	  end
     end
 	
-	assert current_handle == nil # should have been closed...
-	filenames.each{|f| File.delete f} # don't want the old partial files anymore...
+	assert current_handle == nil # should have been already closed...
+	filenames_to_recombo.each{|f| File.delete f} # don't want the old partial files anymore...
 	ensure
-	  current_handle.close if current_handle
+	  current_handle.close if current_handle # error condition
   end
   
   attr_accessor :extra_stuff_for_done_file # for multiple instances, in unit tests, to be able to differentiate themselves in stop file name
