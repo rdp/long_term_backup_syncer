@@ -317,12 +317,13 @@ class IncomingCopier
 	split_up_too_large_of_files
 	chunks = split_to_chunks
 	chunks.each_with_index{|(chunk, size), idx|
-	  sleep!(:server, "copying in chunk #{idx+1} of #{chunks.size}")
+	  sleep!(:server, "copying in chunk #{idx+1} of #{chunks.size}", 0)
 	  do_full_chunk_to_clients chunk, size, (idx == (chunks.size - 1))
     }
   end
   
   def clear_dir_looping dir
+    sleep!(:server, "clearing the temp transfer folder", 0)
 	while File.directory? dir # sometimes dropbox has a handle on things when you try and delete them, so you can't...well at least this can happen in IT tests anyway
 	  FileUtils.rm_rf dir
 	end
