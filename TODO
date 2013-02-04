@@ -9,6 +9,8 @@ do md5's for single files
   
 = someday/never =
 
+revealing seems odd for the various folder...maybe it needs a local "root" folder or something?
+
 warn when shutting down "might take awhile"
 
 figure out better/easier verbiage somehow for normal humans...
