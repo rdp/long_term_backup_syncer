@@ -39,12 +39,12 @@ def re_configure
   end
   storage[:root_drive] = dir
   storage[:client_count] = get_input("how many total end storage repo's will there be, including this one?", (storage[:client_count] || 2)).to_i
-  storage[:shared_drive_space_to_use] = get_input("How much shared drive to use for outgoing transfers (in GB)", storage[:shared_drive_space_to_use] || 2.5).to_f
+  storage[:shared_drive_space_to_use] = get_input("How much shared drive space to use for outgoing transfers (in GB, typically the size of your cloud storage less a bit)", storage[:shared_drive_space_to_use] || 2.0).to_f
   # LODO this feels a bit messed up, always mkdir'ing everything...
   transfer_dir = File.expand_path('~/synchronizer_drop_files_here_they_will_be_copied_out_then_deleted')
   FileUtils.mkdir_p(transfer_dir)
   storage[:drop_into_folder] = new_existing_dir_chooser_and_go("Pick directory where you can drop files in to have them transferred", storage[:drop_into_folder] || transfer_dir)
-  long_term_dir = File.expand_path('~/long_term_local_backup_copy')
+  long_term_dir = File.expand_path('~/long_term_local_repository_copy')
   FileUtils.mkdir_p(long_term_dir)
   storage[:longterm_storage_local_dir] = new_existing_dir_chooser_and_go("Folder to use for long term preservation locally", storage[:longterm_storage_local_dir] || long_term_dir)
 end
