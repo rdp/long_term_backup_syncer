@@ -44,7 +44,7 @@ def re_configure
   transfer_dir = File.expand_path('~/synchronizer_drop_files_here_they_will_be_copied_out_then_deleted')
   FileUtils.mkdir_p(transfer_dir)
   storage[:drop_into_folder] = new_existing_dir_chooser_and_go("Pick directory where you can drop files in to have them transferred", storage[:drop_into_folder] || transfer_dir)
-  long_term_dir = File.expand_path('~/long_term_local_repository_copy')
+  long_term_dir = File.expand_path('~/long_term_local_repository_backup_copy')
   FileUtils.mkdir_p(long_term_dir)
   storage[:longterm_storage_local_dir] = new_existing_dir_chooser_and_go("Folder to use for long term preservation locally", storage[:longterm_storage_local_dir] || long_term_dir)
 end

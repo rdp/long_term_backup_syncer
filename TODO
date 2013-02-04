@@ -1,14 +1,13 @@
 = Yes do =
 
 test it at work
+  2 comps
 
 then go cuh-razy with it
   
-= maybe =
+= someday/never =
 
-= if I ever want to distribute =
-
-change verbiage everywhere to 'repo'
+test it with "sky drive" etc?
 
 fix/do the minimize to tray button
   alerts when start, finish...
@@ -25,7 +24,9 @@ pick a new name
 
 bounce it off people
 
-= someday/never =
+it doesn't exit cleanly?
+
+if they change local repo, warn them if the old one has stuff in it! They want to rename that thing, instead.
 
 on network share: have the "number of clients expected" tracking file right there...re-read it each time you...are about to wait for more clients to finish...
   and when you come up, of course
