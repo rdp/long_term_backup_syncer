@@ -4,8 +4,16 @@ test it at work
   2 comps
 
 then go cuh-razy with it
+
+do md5's for single files
   
 = someday/never =
+
+warn when shutting down "might take awhile"
+
+figure out better/easier verbiage somehow for normal humans...
+
+transmit it with a manifest, for easier batching/restarting [?]
 
 test it with "sky drive" etc?
 
