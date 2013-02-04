@@ -4,3 +4,7 @@ either copy a full repo worth to a HD (portable?) then copy it to the new repo, 
 a computer with the full repo and copy it over (or via network share).
 Then edit the configs of all computers to increment the number.
 Then you're good to go.
+
+or you could edit the configs "everywhere" and...then on one location, copy the entire contents of the
+long term repo to the "to transfer" side, then it would basically resync *everybody* including the new
+guy...

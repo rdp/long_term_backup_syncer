@@ -27,13 +27,13 @@ bounce it off people
 
 = someday/never =
 
-ability to upload [ftp?] to yet other places...
-
 on network share: have the "number of clients expected" tracking file right there...re-read it each time you...are about to wait for more clients to finish...
   and when you come up, of course
   the ideal for humans, of course, would be able to add a new repo, it auto-resinks for them, but...this might be an interesting work around, could maybe add
     a button for "add self as new repo to this system" that for now described how to do it for them...yeah.
 	or something like "you're not adding this local one as a new repo, are you?"
+
+ability to upload [ftp?] to yet other places...
   
 the dropbox balloon popup files can have filenames that sound confusing to humans...
 
@@ -190,7 +190,8 @@ instructions on "how to use tihs with your brother's blaze storage" or the like 
 
 periodic checking of local files
 
-= other stuff =
+it should be able to avoid a local transfer...shouldn't it?
+  just move it from the temp folder?
 
 list of questions to ask
 real website
