@@ -15,13 +15,13 @@ describe IncomingCopier do
     FileUtils.rm_rf 'test_dir'
     Dir.mkdir 'test_dir'
     FileUtils.rm_rf 'test_dir.being_transferred'
-	raise if File.directory? 'test_dir.being_transferred' # would imply unclosed handle...
+    raise if File.directory? 'test_dir.being_transferred' # would imply unclosed handle...
     FileUtils.rm_rf 'dropbox_root_dir'
     FileUtils.rm_rf 'longterm_storage'
     Dir.mkdir 'dropbox_root_dir'
     Dir.mkdir 'longterm_storage'
     @subject = IncomingCopier.new 'test_dir', 'dropbox_root_dir', 'longterm_storage', 0.1, 0.5, 1000, 1
-	@subject.quiet_mode = true
+    @subject.quiet_mode = true
     @competitor = "dropbox_root_dir/backup_syncer/synchronization/some_other_process.lock"
   end
 
@@ -35,12 +35,12 @@ describe IncomingCopier do
   
   it 'should rename dir' do
     File.write 'test_dir/a', 'some stuff'
-	got_it = false
-	@subject.prompt_before_uploading = proc {
-	  got_it = true
-	}
+    got_it = false
+    @subject.prompt_before_uploading = proc {
+      got_it = true
+    }
     @subject.wait_for_incoming_files_prompt_and_rename_entire_dir
-	assert got_it
+    assert got_it
     assert File.directory?('test_dir.being_transferred')
     assert File.exist?('test_dir.being_transferred/a')
   end
@@ -143,9 +143,9 @@ describe IncomingCopier do
     Dir.mkdir 'test_dir/subdir'
     File.write 'test_dir/subdir/b', '_' * 1000  
     Dir.mkdir 'test_dir/subdir2' # an empty dir :)
-	if with_huge_file
-	  File.write('test_dir/subdir/big_file', 'a'*5_050)
-	end
+    if with_huge_file
+      File.write('test_dir/subdir/big_file', 'a'*5_050)
+    end
   end
   
   def create_a_few_files_in_dropbox_dir
@@ -266,7 +266,7 @@ describe IncomingCopier do
     end
     
     it 'should do full client receive loop' do
-	  # use the same client sending it to itself.  which is actually what we do in production too LOL
+      # use the same client sending it to itself.  which is actually what we do in production too LOL
       create_a_few_files_in_to_transfer_dir
       assert !File.exist?(@subject.longterm_storage_dir + '/a') # sanity check test
       t = Thread.new { @subject.go_single_transfer_out }
@@ -277,119 +277,130 @@ describe IncomingCopier do
       assert File.exist?(@subject.longterm_storage_dir + '/subdir/b') # subdir with file
       assert File.directory?(@subject.longterm_storage_dir + '/subdir2') # empty dir -- let it fail for now :)
     end
-	
-	def dir_size dir
-	  sum = 0
-	  Dir[dir + '/**/*'].each{|f|
-	    if File.file? f
-		  sum += File.size(f)
-		else
-		  sum += 1 # empty dir count show up in this number, too :)
-		end
-	  }
-	  sum	  
-	end
-	
-	it 'should do full transfer with 3/2 clients' do
-	  @subject.total_client_size = 3 # 2 clients, plus self
+    
+    def dir_size dir
+      sum = 0
+      Dir[dir + '/**/*'].each{|f|
+        if File.file? f
+          sum += File.size(f)
+        else
+          sum += 1 # empty dir count show up in this number, too :)
+        end
+      }
+      sum      
+    end
+    
+    it 'should do full transfer with 3/2 clients' do
+      @subject.total_client_size = 3 # 2 clients, plus self
       recipient1 = IncomingCopier.new 'test_dir1', 'dropbox_root_dir', 'longterm_storage1', 0.1, 0.5, 1000, 3 # the ending 3 shouldn't matter here...
-	  recipient2 = IncomingCopier.new 'test_dir2', 'dropbox_root_dir', 'longterm_storage2', 0.1, 0.5, 1000, 3
-	  recipient1.quiet_mode = true
-	  recipient2.quiet_mode = true
-	  recipient1.extra_stuff_for_done_file = 'recipient1' # so they'll have distinct touch files
-	  recipient2.extra_stuff_for_done_file = 'recipient2'
-	  create_a_few_files_in_to_transfer_dir 
+      recipient2 = IncomingCopier.new 'test_dir2', 'dropbox_root_dir', 'longterm_storage2', 0.1, 0.5, 1000, 3
+      recipient1.quiet_mode = true
+      recipient2.quiet_mode = true
+      recipient1.extra_stuff_for_done_file = 'recipient1' # so they'll have distinct touch files
+      recipient2.extra_stuff_for_done_file = 'recipient2'
+      create_a_few_files_in_to_transfer_dir 
       t = Thread.new { @subject.go_single_transfer_out } # starts serving files out...
-	  t1 = Thread.new { 2.times { recipient1.go_single_transfer_in } }
-	  t2 = Thread.new { 2.times { recipient2.go_single_transfer_in } }
-	  # don't need a thread for one of them...
-	  2.times { @subject.go_single_transfer_in }
-	  t.join
-	  t1.join
-	  dir_size('longterm_storage').should == 1003
-	  dir_size('longterm_storage1').should == 1003
-	  dir_size('longterm_storage2').should == 1003	  
-	end
-	
-	context 'should transfer files that are too big for a single go' do
-	  it 'should copy the file in, as a piece' do
-	    Dir.mkdir 'test_dir.being_transferred'
-	    File.write('test_dir.being_transferred/big_file', 'a'*1001)
-	    proc { @subject.split_to_chunks }.should raise_exception(/we should have already split up/)
-	  end
-	  
-	  it 'should split a file up into pieces' do
-	    Dir.mkdir 'test_dir.being_transferred'
-	    File.write('test_dir.being_transferred/big_file', 'a'*2500)
-		@subject.split_up_too_large_of_files
-		md5 = Digest::MD5.hexdigest('a'*2500)
-		assert File.size("test_dir.being_transferred/big_file___piece_0_of_2_total_size_2500_md5_#{md5}") == 1000
-		assert File.size("test_dir.being_transferred/big_file___piece_2_of_2_total_size_2500_md5_#{md5}") == 500
-		assert !File.exist?('test_dir.being_transferred/big_file')
-	  end
-	  
-	  it 'should combine the files when done' do
-	    md5 = Digest::MD5.hexdigest('a'*3333) # "edcec0614199d2bd452fce368aa82238" is right
-		files = ["longterm_storage/big_file___piece_1_of_1_total_size_3333_md5_#{md5}", "longterm_storage/big_file___piece_0_of_1_total_size_3333_md5_#{md5}"]
-	    File.write(files[0], 'a'*1111)
-	    File.write(files[1], 'a'*2222)
-	    @subject.recombinate_files_split_piece_wise files
-		File.size('longterm_storage/big_file').should == 3333
-		for file in files
-		  assert !File.exist?(file)
-		end
-	  end
-	  
-	  it 'should combine files that have over 10 pieces, and multiple files same time' do
-	    Dir.mkdir 'test_dir.being_transferred'
-	    File.write('test_dir.being_transferred/big_file', 'a'*50_050)
-	    File.write('test_dir.being_transferred/abig_file', 'b'*50_051)
-	    File.write('test_dir.being_transferred/2big_file', 'c'*50_052)
-	    pieces = @subject.split_up_too_large_of_files # lazy testing setup
-		@subject.recombinate_files_split_piece_wise pieces
-		File.read('test_dir.being_transferred/big_file').should == 'a'*50_050
-		File.read('test_dir.being_transferred/abig_file').should == 'b'*50_051
-		File.read('test_dir.being_transferred/2big_file').should == 'c'*50_052
-	  end
-	  
-	  it 'should raise if missing pieces on recombinate time' do
-	    Dir.mkdir 'test_dir.being_transferred'
-	    File.write('test_dir.being_transferred/big_file', 'a'*50_050)
-	    pieces = @subject.split_up_too_large_of_files
-		proc { @subject.recombinate_files_split_piece_wise pieces[0..-2]}.should raise_exception
-		proc { @subject.recombinate_files_split_piece_wise pieces[1..-1]}.should raise_exception
-		# there are a lot more edge cases here...
-	  end	  
-	  
-	  it 'should do a full transfer with pieces' do
+      t1 = Thread.new { 2.times { recipient1.go_single_transfer_in } }
+      t2 = Thread.new { 2.times { recipient2.go_single_transfer_in } }
+      # don't need a thread for one of them...
+      2.times { @subject.go_single_transfer_in }
+      t.join
+      t1.join
+      dir_size('longterm_storage').should == 1003
+      dir_size('longterm_storage1').should == 1003
+      dir_size('longterm_storage2').should == 1003      
+    end
+    
+    it 'should check for file md5s' do
+      out = 'a'
+      md5 = Digest::MD5.hexdigest(out)
+      filename = "test_dir/a_file___md5_#{md5}"
+      File.write(filename, out)
+      @subject.just_check_md5s [filename]
+      proc {@subject.just_check_md5s ['a_filename_sans_md5']}.should raise_exception(/no md5/)
+      File.write(filename, 'corrupted data')
+      proc { @subject.just_check_md5s [filename] }.should raise_exception(/md5 mismatch/)
+    end
+    
+    context 'should transfer files that are too big for a single go' do
+      it 'should copy the file in, as a piece' do
+        Dir.mkdir 'test_dir.being_transferred'
+        File.write('test_dir.being_transferred/big_file', 'a'*1001)
+        proc { @subject.split_to_chunks }.should raise_exception(/we should have already split up/)
+      end
+      
+      it 'should split a file up into pieces' do
+        Dir.mkdir 'test_dir.being_transferred'
+        File.write('test_dir.being_transferred/big_file', 'a'*2500)
+        @subject.split_up_too_large_of_files
+        md5 = Digest::MD5.hexdigest('a'*2500)
+        assert File.size("test_dir.being_transferred/big_file___piece_0_of_2_total_size_2500_md5_#{md5}") == 1000
+        assert File.size("test_dir.being_transferred/big_file___piece_2_of_2_total_size_2500_md5_#{md5}") == 500
+        assert !File.exist?('test_dir.being_transferred/big_file')
+      end
+      
+      it 'should combine the files when done' do
+        md5 = Digest::MD5.hexdigest('a'*3333) # "edcec0614199d2bd452fce368aa82238" is right
+        files = ["longterm_storage/big_file___piece_1_of_1_total_size_3333_md5_#{md5}", "longterm_storage/big_file___piece_0_of_1_total_size_3333_md5_#{md5}"]
+        File.write(files[0], 'a'*1111)
+        File.write(files[1], 'a'*2222)
+        @subject.recombine_files_split_piece_wise_and_check_md5s files
+        File.size('longterm_storage/big_file').should == 3333
+        for file in files
+          assert !File.exist?(file)
+        end
+      end
+      
+      it 'should combine files that have over 10 pieces, and multiple files same time' do
+        Dir.mkdir 'test_dir.being_transferred'
+        File.write('test_dir.being_transferred/big_file', 'a'*50_050)
+        File.write('test_dir.being_transferred/abig_file', 'b'*50_051)
+        File.write('test_dir.being_transferred/2big_file', 'c'*50_052)
+        pieces = @subject.split_up_too_large_of_files # lazy testing setup
+        @subject.recombine_files_split_piece_wise_and_check_md5s pieces
+        File.read('test_dir.being_transferred/big_file').should == 'a'*50_050
+        File.read('test_dir.being_transferred/abig_file').should == 'b'*50_051
+        File.read('test_dir.being_transferred/2big_file').should == 'c'*50_052
+      end
+      
+      it 'should raise if missing pieces on recombinate time' do
+        Dir.mkdir 'test_dir.being_transferred'
+        File.write('test_dir.being_transferred/big_file', 'a'*50_050)
+        pieces = @subject.split_up_too_large_of_files
+        proc { @subject.recombine_files_split_piece_wise_and_check_md5s pieces[0..-2]}.should raise_exception
+        proc { @subject.recombine_files_split_piece_wise_and_check_md5s pieces[1..-1]}.should raise_exception
+        # there are a lot more edge cases here...
+      end      
+      
+      it 'should do a full transfer with pieces' do
         create_a_few_files_in_to_transfer_dir true
-	    assert !File.exist?(@subject.longterm_storage_dir + '/subdir/big_file') # sanity check test		
+        assert !File.exist?(@subject.longterm_storage_dir + '/subdir/big_file') # sanity check test        
         t = Thread.new { @subject.go_single_transfer_out }
         loop { 
-		  got_end_transfer_marker = @subject.go_single_transfer_in 
-		  break if got_end_transfer_marker
-		}
+          got_end_transfer_marker = @subject.go_single_transfer_in 
+          break if got_end_transfer_marker
+        }
         t.join
-		File.read(@subject.longterm_storage_dir + '/subdir/big_file').should == 'a'*5_050
-		assert @subject.previous_you_can_go_for_it_size_file =~ /recombinate_ok/ # last piece is an end of group marker...
-	  end
-	  
-	  it 'should have a unit test to be able to do big transfers one after another...'
-	  
-	  it 'should fail if file sizes dont match up for recombo' do
-	    File.write('longterm_storage/big_file___piece_0_of_1_total_size_3334_md5_xx', 'a'*1111) # wrong size
-	    File.write('longterm_storage/big_file___piece_1_of_1_total_size_3334_md5_xx', 'a'*2222)
-	    proc {@subject.recombinate_files_split_piece_wise ['longterm_storage/big_file___piece_1_of_1_total_size_3334_md5_xx', 'longterm_storage/big_file___piece_0_of_1_total_size_3334_md5_xx']}.should raise_exception /size.*mismatch/  
-	  end
-	  
-	  it 'should fail on md5 mismatch' do
-	    files = ['longterm_storage/big_file___piece_0_of_1_total_size_3333_md5_xx', 'longterm_storage/big_file___piece_1_of_1_total_size_3333_md5_xx']
-	    File.write(files[0], 'a'*1111)
-	    File.write(files[1], 'a'*2222)
-	    proc {@subject.recombinate_files_split_piece_wise files}.should raise_exception /md5.*mismatch/  	  
-	  end
-	
-	end
+        File.read(@subject.longterm_storage_dir + '/subdir/big_file').should == 'a'*5_050
+        assert @subject.previous_you_can_go_for_it_size_file =~ /recombinate_ok/ # last piece is an end of group marker...
+      end
+      
+      it 'should have a unit test to be able to do big transfers one after another...'
+      
+      it 'should fail if file sizes dont match up for recombo' do
+        File.write('longterm_storage/big_file___piece_0_of_1_total_size_3334_md5_xx', 'a'*1111) # wrong size
+        File.write('longterm_storage/big_file___piece_1_of_1_total_size_3334_md5_xx', 'a'*2222)
+        proc {@subject.recombine_files_split_piece_wise_and_check_md5s ['longterm_storage/big_file___piece_1_of_1_total_size_3334_md5_xx', 'longterm_storage/big_file___piece_0_of_1_total_size_3334_md5_xx']}.should raise_exception /size.*mismatch/  
+      end
+      
+      it 'should fail on md5 mismatch' do
+        files = ['longterm_storage/big_file___piece_0_of_1_total_size_3333_md5_xx', 'longterm_storage/big_file___piece_1_of_1_total_size_3333_md5_xx']
+        File.write(files[0], 'a'*1111)
+        File.write(files[1], 'a'*2222)
+        proc {@subject.recombine_files_split_piece_wise_and_check_md5s files}.should raise_exception /md5.*mismatch/        
+      end
+    
+    end
 
   end
 

@@ -49,9 +49,24 @@ class IncomingCopier
     files_copied
   end
   
-  def recombinate_files_split_piece_wise filenames
+  # TODO have some trailing appelido for all files, too, like .in_transfer_file...
+  
+  def just_check_md5s filenames  
+    for filename in filenames
+      filename =~ /___md5_(.*)$/
+      expected_md5 = $1
+      raise "filename has no md5?" + filename unless expected_md5
+      if (md5 = Digest::MD5.file(filename)) != expected_md5
+          raise "md5 mismatch? #{md5} #{expected_md5}"
+      end
+    end  
+  end
+  
+  def recombine_files_split_piece_wise_and_check_md5s filenames
     regex = /^(.+)___piece_(\d+)_of_(\d+)_total_size_(\d+)_md5_(.*)$/
     filenames_to_recombo = filenames.select{|f| f =~ regex}.sort_by{|f| f =~ regex; [$1, Integer($2)]}
+    other_filenames= filenames.select{|f| f !~ regex}
+    just_check_md5s other_filenames
     previous_number = nil
     previous_name = nil
     previous_total_size = nil
@@ -148,7 +163,7 @@ class IncomingCopier
   def recombinate_files_for_multiple_transfers_possibly
     got_end_big_transfer = false
       if @current_transfer_file =~ /recombinate_ok/
-      recombinate_files_split_piece_wise @copied_files
+      recombine_files_split_piece_wise_and_check_md5s @copied_files
       @copied_files = []
       got_end_big_transfer = true
     end
